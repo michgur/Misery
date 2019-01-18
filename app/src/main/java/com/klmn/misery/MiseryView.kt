@@ -1,16 +1,13 @@
 package com.klmn.misery
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.opengl.GLES30.*
 import android.opengl.GLSurfaceView
 import android.view.MotionEvent
-import com.klmn.misery.math.*
+import com.klmn.misery.math.Vec3f
 import java.lang.System.nanoTime
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.random.Random
 
 /**
@@ -30,7 +27,7 @@ private const val SECOND = 1000000000L
  */
 
 @SuppressLint("ViewConstructor")
-class MiseryView(private val activity: Activity) : GLSurfaceView(activity), GLSurfaceView.Renderer
+class MiseryView(val game: Game) : GLSurfaceView(game.activity), GLSurfaceView.Renderer
 {
     init {
         setEGLContextClientVersion(3)
@@ -38,15 +35,9 @@ class MiseryView(private val activity: Activity) : GLSurfaceView(activity), GLSu
         setRenderer(this)
     }
 
-    var pigVelocity = 0.007f
     var colorVelocity = 0.02f
-    lateinit var pig: Entity
-    lateinit var shader: Shader
     var nextColor = Vec3f()
     var color = Vec3f()
-    var camera = Camera()
-    lateinit var modelRenderer: ModelRenderer
-    lateinit var interactionSystem: InteractionSystem
 
     private var fps = 0
     private var last = 0L
@@ -68,18 +59,15 @@ class MiseryView(private val activity: Activity) : GLSurfaceView(activity), GLSu
 
         glClear(GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT)
 
-        modelRenderer.update((now - last).toFloat() / SECOND)
-        pig[Transform::class]!!.rotation *= Quaternion.rotation(Vec3f.UP, pigVelocity * Math.PI.toFloat())
+        game.render((now - last).toFloat() / SECOND)
+        game.update((now - last).toFloat() / SECOND)
 
         fps++
         timer += now - last
         last = now
     }
 
-    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        modelRenderer = ModelRenderer(shader,
-                Perspective(Math.PI.toFloat() * 0.5f, width, height, 0.1f, 1000f), camera)
-    }
+    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) = game.onViewChanged(width, height)
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
         glFrontFace(GL_CW)
@@ -89,48 +77,8 @@ class MiseryView(private val activity: Activity) : GLSurfaceView(activity), GLSu
 
         glClearColor(0f, 0f, 0f, 1f)
 
-        shader = Shader(activity.assets, "vertex.glsl", "fragment.glsl")
-        val mesh = Mesh(activity.assets, "pig.obj")
-        val texture = Texture(activity.assets, "pig.png")
-
-        val transform = Transform(
-                scale = Vec3f(0.1f),
-                translation = Vec3f(0f, -1f, 20f),
-                rotation = Quaternion.rotation(Vec3f.LEFT, 0.5f)
-        )
-
-        pig = Entity()
-        pig.put(Model(mesh, texture))
-        pig.put(transform)
-
-        init = true
-
-        val collidable = setOf(Transform::class, AABB::class)
-        interactionSystem = InteractionSystem(collidable)
-        interactionSystem.addInteraction(Interaction(collidable, collidable) { delta, a, b ->
-            println("$a intersects $b (delta $delta)")
-        })
+        game.init()
     }
 
-    var init = false
-    var touch: Vec2f? = null
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (init) when (event.action) {
-            MotionEvent.ACTION_DOWN -> touch = Vec2f(event.x, event.y)
-            MotionEvent.ACTION_MOVE -> {
-                val delta = (touch ?: return true) - Vec2f(event.x, event.y)
-
-                val transform = pig[Transform::class]!!
-                transform.translation += Vec3f(delta.x * -0.02f, 0f, delta.y * 0.01f)
-                fun clamp(value: Float, bottom: Float, top: Float) = min(top, max(bottom, value))
-                transform.translation =
-                        Vec3f(clamp(transform.translation.x, -15f, 15f), 0f,
-                        clamp(transform.translation.z, -2f, 40f))
-
-                touch = Vec2f(event.x, event.y)
-            }
-        }
-
-        return true
-    }
+    override fun onTouchEvent(event: MotionEvent): Boolean = game.inputBuffer.add(event)
 }

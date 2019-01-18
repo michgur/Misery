@@ -1,6 +1,5 @@
 package com.klmn.misery
 
-import com.klmn.misery.math.Transform
 import com.klmn.misery.math.Vec3f
 import kotlin.math.pow
 
@@ -14,12 +13,12 @@ data class Motion(var velocity: Vec3f = Vec3f(), var acceleration: Vec3f = Vec3f
  * We don't need a MotionSystem class. We don't need this to be provided by the engine.
  * The engine will only provide the necessary math.
  * This way we: a) allow more customization without adding much boilerplate. b) avoid stupid oop constructs */
-val motionSystem = system(Motion::class, Transform::class) { delta, entity ->
-    val transform = entity[Transform::class]!!
-    val (velocity, acceleration) = entity[Motion::class]!!
-
-    transform.translation = MotionIntegrations.forestRuth(transform.translation, velocity, acceleration, delta)
-}
+//val motionSystem = system(Motion::class, Transform::class) { delta, entity ->
+//    val transform = entity[Transform::class]!!
+//    val (velocity, acceleration) = entity[Motion::class]!!
+//
+//    transform.translation = MotionIntegrations.forestRuth(transform.translation, velocity, acceleration, delta)
+//}
 
 object MotionIntegrations
 {

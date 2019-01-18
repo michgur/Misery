@@ -17,6 +17,6 @@ class Misery : Activity()
         val info = (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).deviceConfigurationInfo
         assert(info.reqGlEsVersion < 0x30000) { "Device Does Not Support GLES3.0" }
 
-        setContentView(MiseryView(this))
+        setContentView(MiseryView(PigGame(this)))
     }
 }

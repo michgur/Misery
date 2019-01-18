@@ -10,9 +10,9 @@ import kotlin.reflect.KClass
  * Created by Michael on 1/8/2019.
  */
 // todo: think how to abstract this class (could be part of ECS.kt if necessary)
-class InteractionSystem(types: Set<KClass<*>>) : System(types)
+class InteractionSystem(game: Game, types: Set<KClass<*>>) : System(game, types)
 {
-    constructor(vararg types: KClass<*>) : this(types.toSet())
+    constructor(game: Game, vararg types: KClass<*>) : this(game, types.toSet())
 
     private val interactions = mutableSetOf<Interaction>()
     fun addInteraction(interaction: Interaction) = interactions.add(interaction)
