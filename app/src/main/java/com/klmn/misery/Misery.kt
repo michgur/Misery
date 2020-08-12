@@ -1,7 +1,6 @@
 package com.klmn.misery
 
 import android.app.Activity
-import android.opengl.GLSurfaceView
 import android.os.Bundle
 
 /**

@@ -16,6 +16,7 @@ import kotlin.random.Random
  * Created by Michael on 12/14/2018.
 */
 private const val SECOND = 1000000000L
+private const val MILLISECOND = 1000000L
 
 /* TODO: a proper engine structure.
     EntityManager for ECS;
@@ -40,18 +41,23 @@ class MiseryView(val game: Game) : GLSurfaceView(game.activity), GLSurfaceView.R
     var nextColor = Vec3f()
     var color = Vec3f()
 
+    val FRAME_CAP = 60;
+
     private var fps = 0
     private var last = 0L
     private var timer = 0L
-    private val frameTime = SECOND / 60
+    private val frameTime = SECOND / FRAME_CAP
     override fun onDrawFrame(gl: GL10) {
-        val now = nanoTime()
+        var now = nanoTime()
         if (timer >= SECOND) {
             println("fps: $fps")
             timer = 0L
             fps = 0
         }
-        if (now - last < frameTime) return
+        if (now - last < frameTime) {
+            Thread.sleep((frameTime - now + last) / MILLISECOND)
+            now = nanoTime()
+        }
 
         color = color * (1f - colorVelocity) + nextColor * colorVelocity
         if ((color - nextColor).length < 0.05f)

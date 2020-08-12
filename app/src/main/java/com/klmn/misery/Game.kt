@@ -113,10 +113,9 @@ class PigGame(activity: Activity) : Game(activity)
             println("$a intersects $b (delta $delta)")
         })
 
-        val velocity = 0.004f
+        val velocity = 0.1f
         createUpdateSystem(Transform::class) { delta, entity ->
-//            entity[Transform::class]!!.rotation *= Quaternion.rotation(Vec3f.UP, velocity * Math.PI.toFloat())
-            entity[Transform::class]!!.scale *= 1.001f
+            entity[Transform::class]!!.rotation *= Quaternion.rotation(Vec3f.UP, delta * velocity * Math.PI.toFloat())
         }
 
         createUpdateSystem(TouchControls::class) { _, entity ->
