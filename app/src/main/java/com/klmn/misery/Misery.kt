@@ -1,8 +1,7 @@
 package com.klmn.misery
 
 import android.app.Activity
-import android.app.ActivityManager
-import android.content.Context
+import android.opengl.GLSurfaceView
 import android.os.Bundle
 
 /**
@@ -14,9 +13,7 @@ class Misery : Activity()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val info = (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).deviceConfigurationInfo
-        assert(info.reqGlEsVersion < 0x30000) { "Device Does Not Support GLES3.0" }
-
-        setContentView(MiseryView(PigGame(this)))
+        val view = MiseryView(PigGame(this))
+        setContentView(view)
     }
 }

@@ -12,7 +12,7 @@ data class Model(val mesh: Mesh, val texture: Texture)
 fun renderModel(model: Model, transform: Transform, shader: Shader, projection: Projection, camera: Camera) {
     shader.bind()
     shader.loadUniform("mvp", projection.asMatrix() * (camera.matrix * transform.matrix))
-    shader.loadUniform("model", transform.matrix)
+//    shader.loadUniform("model", transform.matrix)
     model.texture.bind(1)
     shader.loadUniform("diffuse", 1)
 

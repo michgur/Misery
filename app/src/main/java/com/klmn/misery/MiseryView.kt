@@ -5,6 +5,7 @@ import android.opengl.GLES30.*
 import android.opengl.GLSurfaceView
 import android.view.MotionEvent
 import com.klmn.misery.math.Vec3f
+import gli_.clear
 import java.lang.System.nanoTime
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10

@@ -20,7 +20,7 @@ class Shader(vertexSource: String, fragmentSource: String)
             this(readFile(assets, vertexPath), readFile(assets, fragmentPath))
     init {
         id = glCreateProgram()
-        assert(id > 0)
+        require(id > 0)
         bind()
 
         addShader(vertexSource, GL_VERTEX_SHADER)
@@ -39,6 +39,7 @@ class Shader(vertexSource: String, fragmentSource: String)
         /** for (i in 0 until count[0]) {
         val name = glGetActiveAttrib(id, i, sizeAndType, 0, sizeAndType, 1)
         }*/
+        count[1] = 100
         for (i in 0 until count[1]) {
             val name = glGetActiveUniform(id, i, sizeAndType, 0, sizeAndType, 1)
             uniforms[name] = glGetUniformLocation(id, name)
@@ -51,7 +52,7 @@ class Shader(vertexSource: String, fragmentSource: String)
 
     private fun addShader(source: String, type: Int) {
         val shader = glCreateShader(type)
-        assert(shader > 0)
+        require(shader > 0)
 
         glShaderSource(shader, source)
         glCompileShader(shader)
@@ -61,7 +62,7 @@ class Shader(vertexSource: String, fragmentSource: String)
     }
 
     private fun uniformID(name: String): Int {
-        require(name in uniforms.keys)
+        check(name in uniforms.keys) { "no such uniform $name. note that unused uniforms are removed" }
         return uniforms[name]!!
     }
     // these assume Shader is bound
