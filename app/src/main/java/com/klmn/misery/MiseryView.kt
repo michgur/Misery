@@ -48,6 +48,7 @@ class MiseryView(val game: Game) : GLSurfaceView(game.activity), GLSurfaceView.R
     private var timer = 0L
     private val frameTime = SECOND / FRAME_CAP
     override fun onDrawFrame(gl: GL10) {
+        println(MiseryJNI.helloWorld())
         var now = nanoTime()
         if (timer >= SECOND) {
             println("fps: $fps")
