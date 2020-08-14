@@ -1,6 +1,8 @@
 package com.klmn.misery
 
 import android.app.Activity
+import android.content.res.AssetManager
+import android.content.res.Resources
 import android.os.Bundle
 
 /**

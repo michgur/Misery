@@ -9,4 +9,4 @@ set_target_properties( libc++ PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/a
 
 include_directories( assimp/include assimp/${ANDROID_ABI} )
 
-target_link_libraries( misery-native-lib assimp-lib libc++ )
+target_link_libraries( misery-native-lib assimp-lib libc++ android log GLESv3 )
