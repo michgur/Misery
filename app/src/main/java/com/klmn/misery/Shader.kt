@@ -1,6 +1,5 @@
 package com.klmn.misery
 
-import android.content.res.AssetManager
 import android.opengl.GLES30.*
 import com.klmn.misery.math.Mat4f
 import com.klmn.misery.math.Vec2f
@@ -12,25 +11,15 @@ import com.klmn.misery.math.Vec3f
  */
 class Shader(vertexSource: String, fragmentSource: String)
 {
-    @Suppress("JoinDeclarationAndAssignment") // will check for gl context before assigning to id
-    private val id: Int
+    private companion object {
+        external fun createProgram(vertexFile: String, fragmentFile: String): Int
+    }
+
+    private val id: Int = createProgram(vertexSource, fragmentSource)
     private val uniforms = mutableMapOf<String, Int>()
 
-    constructor(assets: AssetManager, vertexPath: String, fragmentPath: String) :
-            this(readFile(assets, vertexPath), readFile(assets, fragmentPath))
     init {
-        id = glCreateProgram()
-        require(id > 0)
         bind()
-
-        addShader(vertexSource, GL_VERTEX_SHADER)
-        addShader(fragmentSource, GL_FRAGMENT_SHADER)
-
-        glLinkProgram(id)
-        glValidateProgram(id)
-
-        println(glGetProgramInfoLog(id))
-
         val count = IntArray(2)
         glGetProgramiv(id, GL_ACTIVE_ATTRIBUTES, count, 0)
         glGetProgramiv(id, GL_ACTIVE_UNIFORMS, count, 1)
@@ -50,17 +39,6 @@ class Shader(vertexSource: String, fragmentSource: String)
     fun bind() = glUseProgram(id)
     fun unbind() = glUseProgram(0)
 
-    private fun addShader(source: String, type: Int) {
-        val shader = glCreateShader(type)
-        require(shader > 0)
-
-        glShaderSource(shader, source)
-        glCompileShader(shader)
-        println(glGetShaderInfoLog(shader))
-
-        glAttachShader(id, shader)
-    }
-
     private fun uniformID(name: String): Int {
         check(name in uniforms.keys) { "no such uniform $name. note that unused uniforms are removed" }
         return uniforms[name]!!
@@ -73,5 +51,3 @@ class Shader(vertexSource: String, fragmentSource: String)
     fun loadUniform(name: String, value: Mat4f) = glUniformMatrix4fv(uniformID(name), 1, true, value.toFloatArray(), 0)
     fun loadUniform(name: String, loadFunction: (Int) -> Unit) = loadFunction(uniformID(name))
 }
-
-private fun readFile(assets: AssetManager, path: String) = assets.open(path).bufferedReader().use { it.readText() }

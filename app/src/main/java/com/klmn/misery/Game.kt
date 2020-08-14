@@ -50,10 +50,10 @@ class PigGame(activity: Activity) : Game(activity)
     }
 
     override fun init() {
-        val shader = Shader(activity.assets, "vertex.glsl", "fragment.glsl")
+        val shader = Shader("vertex.glsl", "fragment.glsl")
         val camera = Camera()
 
-        val mesh = Mesh(activity.assets, "pig.obj")
+        val mesh = Mesh("pig.obj")
         val texture = Texture(activity.assets, "pig.png")
         val transform = Transform(
                 scale = Vec3f(0.1f),

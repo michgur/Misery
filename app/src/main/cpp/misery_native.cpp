@@ -12,28 +12,32 @@
 #include <android/asset_manager_jni.h>
 #include <android/log.h>
 #include <GLES3/gl3.h>
+#include "logging.h"
 
-#define ASSERT(condition, ...) if (!condition) __android_log_assert(#condition, "misery-assets", __VA_ARGS__)
+AAssetManager* assetManager;
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_Misery_00024Companion_setNativeAssetManager(JNIEnv *env, jobject thiz,
+                                                                 jobject asset_manager) {
+    assetManager = AAssetManager_fromJava(env, asset_manager);
+}
 
 struct Mesh { const GLuint vao, size; };
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_klmn_misery_Mesh_00024Companion_loadMesh(JNIEnv *env, jobject thiz, jobject jassetManager,
+Java_com_klmn_misery_Mesh_00024Companion_loadMesh(JNIEnv *env, jobject thiz,
                                                   jstring file, jstring ext) {
     const char* fileString = env->GetStringUTFChars(file, nullptr);
     const char* extString = env->GetStringUTFChars(ext, nullptr);
 
-    AAssetManager* assetManager = AAssetManager_fromJava(env, jassetManager);
     AAsset* mesh = AAssetManager_open(assetManager, fileString, AASSET_MODE_BUFFER);
     ASSERT(mesh, "could not open asset %s", fileString);
     long length = AAsset_getLength(mesh);
     const void* buffer = AAsset_getBuffer(mesh);
 
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFileFromMemory(buffer, length,
-                                                       aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-                                                       aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs, extString);
+    const aiScene* scene = importer.ReadFileFromMemory(buffer, length,aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs, extString);
 
     ASSERT(scene, "assimp could not import mesh file %s", fileString);
     ASSERT(scene->mNumMeshes, "assimp could not find mesh data in file %s", fileString);
@@ -112,4 +116,55 @@ Java_com_klmn_misery_Mesh_00024Companion_drawMesh(JNIEnv *env, jobject thiz, jlo
     glBindVertexArray(((Mesh*) pointer)->vao);
     glDrawElements(GL_TRIANGLES, ((Mesh*) pointer)->size, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+}
+
+void addShader(int program, const char* source, int length, int type) {
+    GLint shader = glCreateShader(type);
+    ASSERT(shader, "GLES could not create shader");
+
+    glShaderSource(shader, 1, &source, &length);
+    glCompileShader(shader);
+
+    int logLength;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+    char* log = new char[logLength];
+    glGetShaderInfoLog(shader, logLength, nullptr, log);
+    LOGI("%s", log);
+    delete[] log;
+
+    glAttachShader(program, shader);
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_klmn_misery_Shader_00024Companion_createProgram(JNIEnv *env, jobject thiz,
+                                                         jstring vertex_file,
+                                                         jstring fragment_file) {
+    GLuint id = glCreateProgram();
+    ASSERT(id, "GLES could not create shader program");
+    glUseProgram(id);
+
+    const char* vertexFileName = env->GetStringUTFChars(vertex_file, nullptr);
+    const char* fragmentFileName = env->GetStringUTFChars(fragment_file, nullptr);
+    AAsset* vertexSource = AAssetManager_open(assetManager, vertexFileName, AASSET_MODE_BUFFER);
+    AAsset* fragmentSource = AAssetManager_open(assetManager, fragmentFileName, AASSET_MODE_BUFFER);
+    addShader(id, (const char*) AAsset_getBuffer(vertexSource), AAsset_getLength(vertexSource), GL_VERTEX_SHADER);
+    addShader(id, (const char*) AAsset_getBuffer(fragmentSource), AAsset_getLength(fragmentSource), GL_FRAGMENT_SHADER);
+    env->ReleaseStringUTFChars(vertex_file, vertexFileName);
+    env->ReleaseStringUTFChars(fragment_file, fragmentFileName);
+    AAsset_close(vertexSource);
+    AAsset_close(fragmentSource);
+
+    glLinkProgram(id);
+    glValidateProgram(id);
+
+    int logLength;
+    glGetProgramiv(id, GL_INFO_LOG_LENGTH, &logLength);
+    char* log = new char[logLength];
+    glGetProgramInfoLog(id, logLength, nullptr, log);
+    LOGI("%s", log);
+    delete[] log;
+
+    glUseProgram(0);
+    return id;
 }

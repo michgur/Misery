@@ -1,5 +1,5 @@
 cmake_minimum_required( VERSION 3.4.1 )
-add_library( misery-native-lib SHARED HelloWorld.cpp )
+add_library( misery-native-lib SHARED misery_native.cpp )
 
 add_library( assimp-lib SHARED IMPORTED )
 set_target_properties( assimp-lib PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/assimp/${ANDROID_ABI}/libassimpd.so)
