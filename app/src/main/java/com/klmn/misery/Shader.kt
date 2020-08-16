@@ -11,11 +11,7 @@ import com.klmn.misery.math.Vec3f
  */
 class Shader(vertexSource: String, fragmentSource: String)
 {
-    private companion object {
-        external fun createProgram(vertexFile: String, fragmentFile: String): Int
-    }
-
-    private val id: Int = createProgram(vertexSource, fragmentSource)
+    private val id: Int = MiseryJNI.createProgram(vertexSource, fragmentSource)
     private val uniforms = mutableMapOf<String, Int>()
 
     init {

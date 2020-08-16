@@ -13,11 +13,12 @@
 #include <android/log.h>
 #include <GLES3/gl3.h>
 #include "logging.h"
+#include "ECS.h"
 
 AAssetManager* assetManager;
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_Misery_00024Companion_setNativeAssetManager(JNIEnv *env, jobject thiz,
+Java_com_klmn_misery_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz,
                                                                  jobject asset_manager) {
     assetManager = AAssetManager_fromJava(env, asset_manager);
 }
@@ -26,7 +27,7 @@ struct Mesh { const GLuint vao, size; };
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_klmn_misery_Mesh_00024Companion_loadMesh(JNIEnv *env, jobject thiz,
+Java_com_klmn_misery_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz,
                                                   jstring file, jstring ext) {
     const char* fileString = env->GetStringUTFChars(file, nullptr);
     const char* extString = env->GetStringUTFChars(ext, nullptr);
@@ -112,7 +113,7 @@ Java_com_klmn_misery_Mesh_00024Companion_loadMesh(JNIEnv *env, jobject thiz,
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_Mesh_00024Companion_drawMesh(JNIEnv *env, jobject thiz, jlong pointer) {
+Java_com_klmn_misery_MiseryJNI_drawMesh(JNIEnv *env, jobject thiz, jlong pointer) {
     glBindVertexArray(((Mesh*) pointer)->vao);
     glDrawElements(GL_TRIANGLES, ((Mesh*) pointer)->size, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
@@ -137,7 +138,7 @@ void addShader(int program, const char* source, int length, int type) {
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_klmn_misery_Shader_00024Companion_createProgram(JNIEnv *env, jobject thiz,
+Java_com_klmn_misery_MiseryJNI_createProgram(JNIEnv *env, jobject thiz,
                                                          jstring vertex_file,
                                                          jstring fragment_file) {
     GLuint id = glCreateProgram();
@@ -167,4 +168,29 @@ Java_com_klmn_misery_Shader_00024Companion_createProgram(JNIEnv *env, jobject th
 
     glUseProgram(0);
     return id;
+}
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_klmn_misery_MiseryJNI_createEntity(JNIEnv *env, jobject thiz) {
+    return ECS::getInstance().newEntity();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_putComponent(JNIEnv *env, jobject thiz, jint entity, jstring type,
+                                            jobject value) {
+    const char* typeChars = env->GetStringUTFChars(type, nullptr);
+    std::string typeString = std::string(typeChars);
+    auto* allocValue = env->NewGlobalRef(value);
+    ECS::getInstance().addComponent(entity, typeString, allocValue);
+    env->ReleaseStringUTFChars(type, typeChars);
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_klmn_misery_MiseryJNI_getComponent(JNIEnv *env, jobject thiz, jint entity, jstring type) {
+    const char* typeChars = env->GetStringUTFChars(type, nullptr);
+    std::string typeString = std::string(typeChars);
+    void* cmp = ECS::getInstance().getComponent(entity, typeString);
+    env->ReleaseStringUTFChars(type, typeChars);
+
+    return (jobject) cmp;
 }

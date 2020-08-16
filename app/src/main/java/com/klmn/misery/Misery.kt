@@ -11,17 +11,13 @@ import java.lang.System
  */
 class Misery : Activity()
 {
-    companion object {
-        init { System.loadLibrary("misery-native-lib") }
-        external fun setNativeAssetManager(assetManager: AssetManager)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val view = MiseryView(PigGame(this))
         setContentView(view)
 
-        setNativeAssetManager(assets)
+        MiseryJNI.setNativeAssetManager(assets)
+        test()
     }
 }
