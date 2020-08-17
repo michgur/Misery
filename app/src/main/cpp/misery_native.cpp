@@ -171,8 +171,8 @@ Java_com_klmn_misery_MiseryJNI_createProgram(JNIEnv *env, jobject thiz,
 }
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_klmn_misery_MiseryJNI_createEntity(JNIEnv *env, jobject thiz) {
-    return ECS::getInstance().newEntity();
+Java_com_klmn_misery_MiseryJNI_createEntity(JNIEnv *env, jobject thiz, jobject wrapper) {
+    return ECS::getInstance().newEntity(env->NewGlobalRef(wrapper));
 }
 extern "C"
 JNIEXPORT void JNICALL
@@ -201,4 +201,8 @@ Java_com_klmn_misery_MiseryJNI_addSystem(JNIEnv *env, jobject thiz, jobjectArray
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_updateECS(JNIEnv *env, jobject thiz, jfloat delta) {
     ECS::getInstance().update(env, delta);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_clearECS(JNIEnv *env, jobject thiz) {
+    ECS::getInstance().clear(env);
 }

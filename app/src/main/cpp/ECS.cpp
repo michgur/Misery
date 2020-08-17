@@ -6,11 +6,10 @@
 #include <algorithm>
 #include "logging.h"
 
-uint ECS::newEntity() {
-    Entity entity;
-    entity.id = entities.size();
-    entities.push_back(entity);
-    return entity.id;
+uint ECS::newEntity(jobject jwrapper) {
+    uint id = entities.size();
+    entities.push_back(Entity { id, 0, std::map<uint, uint>(), jwrapper });
+    return id;
 }
 
 uint ECS::getTypeID(std::string &type) {
@@ -74,7 +73,7 @@ template<typename T>
 T *ECS::getNativeComponent(uint entity, std::string& type)
 { return getNativeComponent<T>(entity, getTypeID(type)); }
 
-void ECS::addSystem(JNIEnv* env, jobject &apply, jobjectArray &reqTypes) {
+void ECS::addSystem(JNIEnv* env, jobject &jwrapper, jobjectArray &reqTypes) {
     uint64_t signature = 0;
     uint typeCount = env->GetArrayLength(reqTypes);
     for (uint i = 0; i < typeCount; i++) {
@@ -86,27 +85,27 @@ void ECS::addSystem(JNIEnv* env, jobject &apply, jobjectArray &reqTypes) {
 
         env->ReleaseStringUTFChars(typeString, typeChars);
     }
-    systems.push_back(System { signature, env->NewGlobalRef(apply) });
+    jclass jsystemclass = env->GetObjectClass(jwrapper);
+    jmethodID jsysteminvoke = env->GetMethodID(jsystemclass, "invoke", "(Lcom/klmn/misery/Entity;F)V");
+    systems.push_back(System { signature, env->NewGlobalRef(jwrapper), jsysteminvoke });
 }
 
+#define MATCHES(s, e) (s.signature & e.signature) == s.signature
 void ECS::update(JNIEnv* env, jfloat delta) {
-    for (uint i = 0; i < nativeSystems.size(); i++) {
-        NativeSystem& system = nativeSystems[i];
-        for (uint j = 0; j < entities.size(); j++)
-            if ((entities[i].signature & system.signature) == system.signature) system.apply(entities[i], delta);
+    for (auto & system : nativeSystems) {
+        for (auto & entity : entities)
+            if (MATCHES(system, entity)) system.apply(entity, delta);
     }
-    if (systems.empty()) return;
-    jclass jentityclass = env->FindClass("com/klmn/misery/Entity");
-    jmethodID jentityinit = env->GetMethodID(jentityclass, "<init>", "(I)V");
     for (auto& system : systems) {
         for (auto& entity : entities)
-            if ((entity.signature & system.signature) == system.signature) {
-                jclass jsystemclass = env->GetObjectClass(system.apply);
-                jmethodID jsysteminvoke = env->GetMethodID(jsystemclass, "invoke", "(Lcom/klmn/misery/Entity;F)V");
-                jobject entityObject = env->NewObject(jentityclass, jentityinit, (jint) entity.id);
-                env->CallVoidMethod(system.apply, jsysteminvoke, entityObject, delta);
-                env->DeleteLocalRef(jsystemclass);
-                env->DeleteLocalRef(entityObject);
-            }
+            if (MATCHES(system, entity))
+                env->CallVoidMethod(system.jwrapper, system.invoke, entity.jwrapper, delta);
     }
+}
+
+void ECS::clear(JNIEnv* env) {
+    for (auto & vec : components)
+        for (auto& comp : vec) env->DeleteGlobalRef(comp);
+    for (auto& entity : entities) env->DeleteGlobalRef(entity.jwrapper);
+    for (auto& system : systems) env->DeleteGlobalRef(system.jwrapper);
 }

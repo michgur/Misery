@@ -16,6 +16,7 @@ struct Entity {
     uint id;
     uint64_t signature = 0;
     std::map<uint, uint> components;
+    jobject jwrapper;
 };
 
 struct NativeComponentBase { virtual void* data() { return nullptr; } };
@@ -27,7 +28,8 @@ struct NativeComponentClass : NativeComponentBase {
 
 struct System {
     uint64_t signature;
-    jobject apply;
+    jobject jwrapper;
+    jmethodID invoke;
 };
 struct NativeSystem {
     uint64_t signature;
@@ -53,7 +55,7 @@ class ECS {
     uint64_t createSignature(uint64_t signature, std::string &arg, T &... args);
     uint64_t createSignature(uint64_t signature, std::string &arg);
 public:
-    uint newEntity();
+    uint newEntity(jobject jwrapper);
     uint getTypeID(std::string& type);
     template <typename T>
     void addNativeComponent(uint entity, uint type, T& component);
@@ -68,8 +70,9 @@ public:
     jobject* getComponent(uint entity, uint type);
     jobject* getComponent(uint entity, std::string& type);
     void addNativeSystem(void (*apply)(Entity&, float), std::string &reqType0, std::string &reqTypes, ...);
-    void addSystem(JNIEnv* env, jobject& apply, jobjectArray& reqTypes);
+    void addSystem(JNIEnv* env, jobject& jwrapper, jobjectArray& reqTypes);
     void update(JNIEnv* env, jfloat delta);
+    void clear(JNIEnv* env);
 
     static ECS& getInstance();
 };

@@ -17,4 +17,9 @@ class Misery : Activity()
 
         MiseryJNI.setNativeAssetManager(assets)
     }
+
+    override fun onDestroy() {
+        MiseryJNI.clearECS()
+        super.onDestroy()
+    }
 }
