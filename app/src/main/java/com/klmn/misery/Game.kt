@@ -6,7 +6,6 @@ import com.klmn.misery.math.*
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
-import kotlin.reflect.KClass
 
 /**
  * ಠ^ಠ.
@@ -14,32 +13,10 @@ import kotlin.reflect.KClass
  */
 open class Game(val activity: Activity)
 {
-    val entities = EntityManager()
-    val renderSystems = mutableSetOf<System>()
-    val updateSystems = mutableSetOf<System>()
     val inputBuffer = mutableSetOf<MotionEvent>()
-
-    // will be part of a game loop or smth
-    fun render(frameTime: Float) = renderSystems.forEach { it.update(frameTime) }
-    fun update(delta: Float) {
-        updateSystems.forEach { it.update(delta) }
-        inputBuffer.clear()
-    }
 
     open fun init() {}
     open fun onViewChanged(width: Int, height: Int) {}
-
-    fun createEntity() = Entity(entities)
-    fun createRenderSystem(vararg types: KClass<*>, update: (Float, Entity) -> Unit) = createRenderSystem(types.toSet(), update)
-    fun createRenderSystem(types: Set<KClass<*>>, update: (Float, Entity) -> Unit)
-            = renderSystems.add(object : System(this, types) {
-        override fun update(delta: Float, entity: Entity) = update(delta, entity)
-    })
-    fun createUpdateSystem(vararg types: KClass<*>, update: (Float, Entity) -> Unit) = createUpdateSystem(types.toSet(), update)
-    fun createUpdateSystem(types: Set<KClass<*>>, update: (Float, Entity) -> Unit)
-            = updateSystems.add(object : System(this, types) {
-        override fun update(delta: Float, entity: Entity) = update(delta, entity)
-    })
 }
 
 class PigGame(activity: Activity) : Game(activity)
@@ -61,13 +38,13 @@ class PigGame(activity: Activity) : Game(activity)
                 rotation = Quaternion.rotation(Vec3f.LEFT, 0.5f)
         )
         for (i in 0..5) {
-            val pig = createEntity()
-            pig.put(Model(mesh, texture))
-            pig.put(transform.copy(scale = Vec3f(0.05f), translation = Vec3f(
+            val pig = Entity()
+            pig["model"] = Model(mesh, texture)
+            pig["transform"] = transform.copy(scale = Vec3f(0.05f), translation = Vec3f(
                     Random.nextFloat() * 10f - 5f,
                     Random.nextFloat() * 10f - 5f,
                     Random.nextFloat() * 30f + 10f
-            )))
+            ))
             var touchID = -1
             var touchPos: Vec2f? = null
             val movementControl = TouchControls(
@@ -81,7 +58,7 @@ class PigGame(activity: Activity) : Game(activity)
                                     event.getX(event.findPointerIndex(touchID)),
                                     event.getY(event.findPointerIndex(touchID))
                             )
-                            val pigTransform = this[Transform::class]!!
+                            val pigTransform = this["transform", Transform::class]!!
                             pigTransform.translation += Vec3f(
                                     (touchPos!!.x - newPos.x) * -0.02f,
                                     0f,
@@ -99,27 +76,20 @@ class PigGame(activity: Activity) : Game(activity)
                         }
                     }
             )
-            pig.put(movementControl)
+            pig["movementControl"] = movementControl
         }
 
-        createRenderSystem(Model::class, Transform::class) { _, entity ->
-            renderModel(entity[Model::class]!!, entity[Transform::class]!!, shader, projection, camera)
+        system("model", "transform") { entity, _ ->
+            renderModel(entity["model", Model::class]!!, entity["transform", Transform::class]!!, shader, projection, camera)
         }
-
-        val collidable = setOf(Transform::class, AABB::class)
-        val interactionSystem = InteractionSystem(this, collidable)
-        updateSystems.add(interactionSystem)
-        interactionSystem.addInteraction(Interaction(entities, collidable, collidable) { delta, a, b ->
-            println("$a intersects $b (delta $delta)")
-        })
 
         val velocity = 0.1f
-        createUpdateSystem(Transform::class) { delta, entity ->
-            entity[Transform::class]!!.rotation *= Quaternion.rotation(Vec3f.UP, delta * velocity * Math.PI.toFloat())
+        system("transform") { entity, delta ->
+            entity["transform", Transform::class]!!.rotation *= Quaternion.rotation(Vec3f.UP, delta * velocity * Math.PI.toFloat())
         }
 
-        createUpdateSystem(TouchControls::class) { _, entity ->
-            inputBuffer.forEach { entity[TouchControls::class]!!.onTouchEvent(entity, it) }
+        system("movementControl") { entity, _ ->
+            inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }
         }
     }
 }

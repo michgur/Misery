@@ -180,7 +180,7 @@ Java_com_klmn_misery_MiseryJNI_putComponent(JNIEnv *env, jobject thiz, jint enti
                                             jobject value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
     std::string typeString = std::string(typeChars);
-    auto* allocValue = env->NewGlobalRef(value);
+    jobject allocValue = env->NewGlobalRef(value);
     ECS::getInstance().addComponent(entity, typeString, allocValue);
     env->ReleaseStringUTFChars(type, typeChars);
 }
@@ -191,6 +191,14 @@ Java_com_klmn_misery_MiseryJNI_getComponent(JNIEnv *env, jobject thiz, jint enti
     std::string typeString = std::string(typeChars);
     void* cmp = ECS::getInstance().getComponent(entity, typeString);
     env->ReleaseStringUTFChars(type, typeChars);
-
-    return (jobject) cmp;
+    return *((jobject*) cmp);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_addSystem(JNIEnv *env, jobject thiz, jobjectArray types,
+                                         jobject apply) {
+    ECS::getInstance().addSystem(env, apply, types);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_updateECS(JNIEnv *env, jobject thiz, jfloat delta) {
+    ECS::getInstance().update(env, delta);
 }

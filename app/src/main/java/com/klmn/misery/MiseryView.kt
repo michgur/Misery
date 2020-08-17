@@ -62,11 +62,9 @@ class MiseryView(val game: Game) : GLSurfaceView(game.activity), GLSurfaceView.R
         if ((color - nextColor).length < 0.05f)
             nextColor = Vec3f(Random.nextFloat(), Random.nextFloat(), Random.nextFloat()).normalized
         glClearColor(color.x, color.y, color.z, 1f)
-
         glClear(GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT)
 
-        game.render((now - last).toFloat() / SECOND)
-        game.update((now - last).toFloat() / SECOND)
+        MiseryJNI.updateECS((now - last).toFloat() / SECOND)
 
         fps++
         timer += now - last

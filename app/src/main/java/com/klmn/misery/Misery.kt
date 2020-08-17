@@ -1,9 +1,7 @@
 package com.klmn.misery
 
 import android.app.Activity
-import android.content.res.AssetManager
 import android.os.Bundle
-import java.lang.System
 
 /**
  * ಠ^ಠ.
@@ -18,6 +16,5 @@ class Misery : Activity()
         setContentView(view)
 
         MiseryJNI.setNativeAssetManager(assets)
-        test()
     }
 }

@@ -14,4 +14,6 @@ object MiseryJNI
     external fun createEntity(): Int
     external fun putComponent(entity: Int, type: String, value: Any)
     external fun getComponent(entity: Int, type: String): Any
+    external fun addSystem(types: Array<String>, apply: (Entity, Float) -> Unit)
+    external fun updateECS(delta: Float)
 }
