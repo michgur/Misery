@@ -8,18 +8,23 @@
 #define MAX_COMPONENTS 64
 
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <jni.h>
+#include <map>
+#include "logging.h"
 
 struct Entity {
     uint id;
     uint64_t signature = 0;
-    std::map<uint, uint> components;
+    uint* components = new uint[MAX_COMPONENTS];
     jobject jwrapper;
 };
 
-struct NativeComponentBase { virtual void* data() { return nullptr; } };
+struct NativeComponentBase {
+    virtual void* data() = 0;
+    virtual ~NativeComponentBase() {}
+};
 template <typename T>
 struct NativeComponentClass : NativeComponentBase {
     std::vector<T> components;
@@ -46,35 +51,58 @@ struct NativeSystem {
 class ECS {
     std::vector<Entity> entities;
     std::vector<jobject> components[MAX_COMPONENTS];
-    std::map<uint, NativeComponentBase> nativeComponents;
-    std::vector<std::string> types;
+    std::map<uint, NativeComponentBase*> nativeComponents;
+    std::vector<const char*> types;
     std::vector<System> systems;
     std::vector<NativeSystem> nativeSystems;
 
     template<typename... T>
-    uint64_t createSignature(uint64_t signature, std::string &arg, T &... args);
-    uint64_t createSignature(uint64_t signature, std::string &arg);
+    uint64_t createSignature(uint64_t signature, const char* arg, T&... args);
+    uint64_t createSignature(uint64_t signature, const char* arg);
 public:
     uint newEntity(jobject jwrapper);
-    uint getTypeID(std::string& type);
+    uint getTypeID(const char* type);
     template <typename T>
     void addNativeComponent(uint entity, uint type, T& component);
     template <typename T>
-    void addNativeComponent(uint entity, std::string& type, T& component);
+    void addNativeComponent(uint entity, const char* type, T& component);
     template <typename T>
     T* getNativeComponent(uint entity, uint type);
     template<typename T>
-    T *getNativeComponent(uint entity, std::string& type);
+    T* getNativeComponent(uint entity, const char* type);
     void addComponent(uint entity, uint type, jobject& component);
-    void addComponent(uint entity, std::string& type, jobject& component);
+    void addComponent(uint entity, const char* type, jobject& component);
     jobject* getComponent(uint entity, uint type);
-    jobject* getComponent(uint entity, std::string& type);
-    void addNativeSystem(void (*apply)(Entity&, float), std::string &reqType0, std::string &reqTypes, ...);
+    jobject* getComponent(uint entity, const char* type);
+    void addNativeSystem(void (*apply)(Entity&, float), const char* reqType0, const char* reqTypes, ...);
     void addSystem(JNIEnv* env, jobject& jwrapper, jobjectArray& reqTypes);
     void update(JNIEnv* env, jfloat delta);
     void clear(JNIEnv* env);
 
     static ECS& getInstance();
 };
+
+template<typename T>
+void ECS::addNativeComponent(uint entity, uint type, T &component) {
+    auto it = nativeComponents.find(type);
+    if (it == nativeComponents.end()) nativeComponents[type] = new NativeComponentClass<T>();
+    auto* data = (std::vector<T>*) nativeComponents[type]->data();
+    entities[entity].components[type] = data->size();
+    data->push_back(component);
+
+    entities[entity].signature |= (0x1u << type);
+}
+
+template<typename T>
+void ECS::addNativeComponent(uint entity, const char* type, T &component)
+{ addNativeComponent(entity, getTypeID(type), component); }
+
+template<typename T>
+T *ECS::getNativeComponent(uint entity, uint type)
+{ return ((std::vector<T>*) nativeComponents[type]->data())->data() + entity; }
+
+template<typename T>
+T *ECS::getNativeComponent(uint entity, const char* type)
+{ return getNativeComponent<T>(entity, getTypeID(type)); }
 
 #endif //MISERY_ECS_H

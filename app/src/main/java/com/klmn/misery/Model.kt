@@ -1,7 +1,6 @@
 package com.klmn.misery
 
 import com.klmn.misery.math.Camera
-import com.klmn.misery.math.Transform
 
 /**
  * ಠ^ಠ.

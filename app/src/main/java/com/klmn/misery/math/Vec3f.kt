@@ -9,6 +9,7 @@ import kotlin.math.sqrt
 data class Vec3f(var x: Float, var y: Float, var z: Float)
 {
     constructor(f: Float = 0f) : this(f, f, f)
+    constructor(f: FloatArray) : this(f[0], f[1], f[2])
 
     operator fun get(index: Int) = when (index) {
         0 -> x
@@ -42,6 +43,7 @@ data class Vec3f(var x: Float, var y: Float, var z: Float)
     )
 
     override fun toString() = "($x, $y, $z)"
+    fun toFloatArray() = floatArrayOf(x, y, z)
 
     companion object {
         val UP      = Vec3f(0f, 1f, 0f)

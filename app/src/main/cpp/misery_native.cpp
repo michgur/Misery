@@ -14,6 +14,7 @@
 #include <GLES3/gl3.h>
 #include "logging.h"
 #include "ECS.h"
+#include "Transform.h"
 
 AAssetManager* assetManager;
 extern "C"
@@ -108,7 +109,7 @@ Java_com_klmn_misery_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz,
     env->ReleaseStringUTFChars(ext, extString);
 
     Mesh* result = new Mesh {buffers[0], (GLuint) (meshData->mNumFaces * 3)};
-    return (long) (result);
+    return (long) result;
 }
 
 extern "C"
@@ -179,17 +180,15 @@ JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_putComponent(JNIEnv *env, jobject thiz, jint entity, jstring type,
                                             jobject value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
-    std::string typeString = std::string(typeChars);
     jobject allocValue = env->NewGlobalRef(value);
-    ECS::getInstance().addComponent(entity, typeString, allocValue);
+    ECS::getInstance().addComponent(entity, typeChars, allocValue);
     env->ReleaseStringUTFChars(type, typeChars);
 }
 extern "C"
 JNIEXPORT jobject JNICALL
 Java_com_klmn_misery_MiseryJNI_getComponent(JNIEnv *env, jobject thiz, jint entity, jstring type) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
-    std::string typeString = std::string(typeChars);
-    void* cmp = ECS::getInstance().getComponent(entity, typeString);
+    void* cmp = ECS::getInstance().getComponent(entity, typeChars);
     env->ReleaseStringUTFChars(type, typeChars);
     return *((jobject*) cmp);
 }extern "C"
@@ -205,4 +204,38 @@ Java_com_klmn_misery_MiseryJNI_updateECS(JNIEnv *env, jobject thiz, jfloat delta
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_clearECS(JNIEnv *env, jobject thiz) {
     ECS::getInstance().clear(env);
+}
+
+extern "C"
+JNIEXPORT jfloat JNICALL
+Java_com_klmn_misery_MiseryJNI_getFloat(JNIEnv *env, jobject thiz, jlong pointer, jint offset) {
+    return ((float*) pointer)[offset];
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_setFloat(JNIEnv *env, jobject thiz, jlong pointer, jfloat f,
+                                        jint offset) {
+    ((float*) pointer)[offset] = f;
+}extern "C"
+JNIEXPORT jfloatArray JNICALL
+Java_com_klmn_misery_MiseryJNI_getFloats(JNIEnv *env, jobject thiz, jlong pointer, jint count,
+                                         jint offset) {
+    jfloatArray array = env->NewFloatArray(count);
+    env->SetFloatArrayRegion(array, 0, count, (float*) pointer + offset);
+    return array;
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_setFloats(JNIEnv *env, jobject thiz, jlong pointer, jfloatArray f,
+                                         jint offset) {
+    env->GetFloatArrayRegion(f, 0, env->GetArrayLength(f), (float*) pointer + offset);
+}extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_klmn_misery_MiseryJNI_getTransformComponent(JNIEnv *env, jobject thiz, jint entity) {
+    auto* t = ECS::getInstance().getNativeComponent<Transform>(entity, "transform");
+    return (long) t->data;
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_setTransformComponent__I_3F(JNIEnv *env, jobject thiz, jint entity,
+                                                           jfloatArray f) {
+    auto* t = ECS::getInstance().getNativeComponent<Transform>(entity, "transform");
+    env->GetFloatArrayRegion(f, 0, TRANSFORM_SIZE, t->data);
 }

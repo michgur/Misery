@@ -1,5 +1,7 @@
 package com.klmn.misery.math
 
+import com.klmn.misery.Transform
+
 /**
  * ಠ^ಠ.
  * Created by Michael on 12/28/2018.

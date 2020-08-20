@@ -17,4 +17,10 @@ object MiseryJNI
     external fun addSystem(types: Array<String>, apply: (Entity, Float) -> Unit)
     external fun updateECS(delta: Float)
     external fun clearECS()
+    external fun getFloat(pointer: Long, offset: Int): Float
+    external fun setFloat(pointer: Long, f: Float, offset: Int)
+    external fun getFloats(pointer: Long, count: Int, offset: Int): FloatArray
+    external fun setFloats(pointer: Long, f: FloatArray, offset: Int)
+    external fun getTransformComponent(entity: Int): Long
+    external fun setTransformComponent(entity: Int, f: FloatArray)
 }

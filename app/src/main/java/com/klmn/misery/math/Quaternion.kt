@@ -12,6 +12,7 @@ data class Quaternion(var x: Float, var y: Float, var z: Float, var w: Float)
 {
     constructor() : this(0f, 0f, 0f, 1f)
     constructor(vector: Vec3f, scalar: Float) : this(vector.x, vector.y, vector.z, scalar)
+    constructor(f: FloatArray) : this(f[1], f[2], f[3], f[0])
 
     inline var scalar
         get() = w
@@ -50,6 +51,7 @@ data class Quaternion(var x: Float, var y: Float, var z: Float, var w: Float)
     inline val back get() = rotate(Vec3f.BACK)
 
     override fun toString() = "[($x, $y, $z), $w]"
+    fun toFloatArray() = floatArrayOf(w, x, y, z)
 
     companion object {
         fun rotation(axis: Vec3f, angle: Float) = Quaternion(axis * sin(angle / 2f), cos(angle / 2))
