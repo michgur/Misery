@@ -9,12 +9,12 @@ import com.klmn.misery.math.Vec3f
  * ಠ^ಠ.
  * Created by Michael on 12/22/2018.
  */
-class Shader(vertexSource: String, fragmentSource: String)
+class Shader(val id: Int)
 {
-    private val id: Int = MiseryJNI.createProgram(vertexSource, fragmentSource)
     private val uniforms = mutableMapOf<String, Int>()
 
-    init {
+    constructor(vertexSource: String, fragmentSource: String)
+            : this(MiseryJNI.createProgram(vertexSource, fragmentSource)) {
         bind()
         val count = IntArray(2)
         glGetProgramiv(id, GL_ACTIVE_ATTRIBUTES, count, 0)

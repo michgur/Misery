@@ -11,12 +11,13 @@ import android.opengl.GLUtils
  * ಠ^ಠ.
  * Created by Michael on 12/28/2018.
  */
-class Texture(bitmap: Bitmap)
+class Texture
 {
-    private val id: Int
+    val id: Int
 
+    constructor(id: Int) { this.id = id }
     constructor(assets: AssetManager, path: String) : this(BitmapFactory.decodeStream(assets.open(path)))
-    init {
+    constructor(bitmap: Bitmap) {
         val intArray = IntArray(1)
         glGenTextures(1, intArray, 0)
         id = intArray[0]

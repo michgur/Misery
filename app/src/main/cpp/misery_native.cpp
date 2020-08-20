@@ -15,16 +15,17 @@
 #include "logging.h"
 #include "ECS.h"
 #include "Transform.h"
+#include "Mesh.h"
 
-AAssetManager* assetManager;
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz,
                                                                  jobject asset_manager) {
-    assetManager = AAssetManager_fromJava(env, asset_manager);
+    Misery::assetManager = AAssetManager_fromJava(env, asset_manager);
+    
+//    ECS::getInstance().addNativeSystem()
 }
 
-struct Mesh { const GLuint vao, size; };
 
 extern "C"
 JNIEXPORT jlong JNICALL
@@ -32,91 +33,17 @@ Java_com_klmn_misery_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz,
                                                   jstring file, jstring ext) {
     const char* fileString = env->GetStringUTFChars(file, nullptr);
     const char* extString = env->GetStringUTFChars(ext, nullptr);
-
-    AAsset* mesh = AAssetManager_open(assetManager, fileString, AASSET_MODE_BUFFER);
-    ASSERT(mesh, "could not open asset %s", fileString);
-    long length = AAsset_getLength(mesh);
-    const void* buffer = AAsset_getBuffer(mesh);
-
-    Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFileFromMemory(buffer, length,aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs, extString);
-
-    ASSERT(scene, "assimp could not import mesh file %s", fileString);
-    ASSERT(scene->mNumMeshes, "assimp could not find mesh data in file %s", fileString);
-
-    const aiMesh* meshData = scene->mMeshes[0];
-    unsigned int indices[meshData->mNumFaces * 3];
-    float vertices[meshData->mNumVertices * 11];
-
-    for (int i = 0; i < meshData->mNumVertices; i++) {
-        const aiVector3D& pos = meshData->mVertices[i];
-        const aiVector3D& textureCoord = (meshData->HasTextureCoords(0))
-                                         ? meshData->mTextureCoords[0][i] : aiVector3D();
-        const aiVector3D& normal = (meshData->HasNormals())
-                                   ? meshData->mNormals[i] : aiVector3D();
-        const aiVector3D& tangent = (meshData->HasTangentsAndBitangents())
-                                    ? meshData->mTangents[i] : aiVector3D();
-
-        const int index = i * 11;
-        vertices[index + 0] = pos.x;
-        vertices[index + 1] = pos.y;
-        vertices[index + 2] = pos.z;
-        vertices[index + 3] = textureCoord.x;
-        vertices[index + 4] = textureCoord.y;
-        vertices[index + 5] = normal.x;
-        vertices[index + 6] = normal.y;
-        vertices[index + 7] = normal.z;
-        vertices[index + 8] = tangent.x;
-        vertices[index + 9] = tangent.y;
-        vertices[index + 10] = tangent.z;
-    }
-    for (int i = 0; i < meshData->mNumFaces; i++) {
-        const aiFace& face = meshData->mFaces[i];
-
-        const int index = i * 3;
-        indices[index + 0] = face.mIndices[0];
-        indices[index + 1] = face.mIndices[1];
-        indices[index + 2] = face.mIndices[2];
-    }
-
-    GLuint buffers[3];
-    glGenVertexArrays(1, buffers);
-    glGenBuffers(2, buffers + 1);
-
-    glBindVertexArray(buffers[0]);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[2]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 44, nullptr);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, false, 44, ((void*) 12));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, false, 44, ((void*) 20));
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, false, 44, ((void*) 32));
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    AAsset_close(mesh);
+    Misery::Mesh* mesh = Misery::loadMeshFromAsset(fileString, extString);
     env->ReleaseStringUTFChars(file, fileString);
     env->ReleaseStringUTFChars(ext, extString);
-
-    Mesh* result = new Mesh {buffers[0], (GLuint) (meshData->mNumFaces * 3)};
-    return (long) result;
+    return (long) mesh;
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_drawMesh(JNIEnv *env, jobject thiz, jlong pointer) {
-    glBindVertexArray(((Mesh*) pointer)->vao);
-    glDrawElements(GL_TRIANGLES, ((Mesh*) pointer)->size, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(((Misery::Mesh*) pointer)->vao);
+    glDrawElements(GL_TRIANGLES, ((Misery::Mesh*) pointer)->size, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
 
@@ -148,8 +75,8 @@ Java_com_klmn_misery_MiseryJNI_createProgram(JNIEnv *env, jobject thiz,
 
     const char* vertexFileName = env->GetStringUTFChars(vertex_file, nullptr);
     const char* fragmentFileName = env->GetStringUTFChars(fragment_file, nullptr);
-    AAsset* vertexSource = AAssetManager_open(assetManager, vertexFileName, AASSET_MODE_BUFFER);
-    AAsset* fragmentSource = AAssetManager_open(assetManager, fragmentFileName, AASSET_MODE_BUFFER);
+    AAsset* vertexSource = AAssetManager_open(Misery::assetManager, vertexFileName, AASSET_MODE_BUFFER);
+    AAsset* fragmentSource = AAssetManager_open(Misery::assetManager, fragmentFileName, AASSET_MODE_BUFFER);
     addShader(id, (const char*) AAsset_getBuffer(vertexSource), AAsset_getLength(vertexSource), GL_VERTEX_SHADER);
     addShader(id, (const char*) AAsset_getBuffer(fragmentSource), AAsset_getLength(fragmentSource), GL_FRAGMENT_SHADER);
     env->ReleaseStringUTFChars(vertex_file, vertexFileName);
