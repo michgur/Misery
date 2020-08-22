@@ -15,7 +15,7 @@
 #include "logging.h"
 #include "ECS.h"
 #include "Transform.h"
-#include "Mesh.h"
+#include "assets.h"
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -47,54 +47,16 @@ Java_com_klmn_misery_MiseryJNI_drawMesh(JNIEnv *env, jobject thiz, jlong pointer
     glBindVertexArray(0);
 }
 
-void addShader(int program, const char* source, int length, int type) {
-    GLint shader = glCreateShader(type);
-    ASSERT(shader, "GLES could not create shader");
-
-    glShaderSource(shader, 1, &source, &length);
-    glCompileShader(shader);
-
-    int logLength;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-    char* log = new char[logLength];
-    glGetShaderInfoLog(shader, logLength, nullptr, log);
-    LOGI("%s", log);
-    delete[] log;
-
-    glAttachShader(program, shader);
-}
-
 extern "C"
 JNIEXPORT jint JNICALL
 Java_com_klmn_misery_MiseryJNI_createProgram(JNIEnv *env, jobject thiz,
                                                          jstring vertex_file,
                                                          jstring fragment_file) {
-    GLuint id = glCreateProgram();
-    ASSERT(id, "GLES could not create shader program");
-    glUseProgram(id);
-
     const char* vertexFileName = env->GetStringUTFChars(vertex_file, nullptr);
     const char* fragmentFileName = env->GetStringUTFChars(fragment_file, nullptr);
-    AAsset* vertexSource = AAssetManager_open(Misery::assetManager, vertexFileName, AASSET_MODE_BUFFER);
-    AAsset* fragmentSource = AAssetManager_open(Misery::assetManager, fragmentFileName, AASSET_MODE_BUFFER);
-    addShader(id, (const char*) AAsset_getBuffer(vertexSource), AAsset_getLength(vertexSource), GL_VERTEX_SHADER);
-    addShader(id, (const char*) AAsset_getBuffer(fragmentSource), AAsset_getLength(fragmentSource), GL_FRAGMENT_SHADER);
+    uint id = Misery::createShaderProgram(vertexFileName, fragmentFileName);
     env->ReleaseStringUTFChars(vertex_file, vertexFileName);
     env->ReleaseStringUTFChars(fragment_file, fragmentFileName);
-    AAsset_close(vertexSource);
-    AAsset_close(fragmentSource);
-
-    glLinkProgram(id);
-    glValidateProgram(id);
-
-    int logLength;
-    glGetProgramiv(id, GL_INFO_LOG_LENGTH, &logLength);
-    char* log = new char[logLength];
-    glGetProgramInfoLog(id, logLength, nullptr, log);
-    LOGI("%s", log);
-    delete[] log;
-
-    glUseProgram(0);
     return id;
 }
 extern "C"
