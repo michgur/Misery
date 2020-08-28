@@ -27,7 +27,7 @@ void render(Entity &e, float delta) {
     int diffuse = glGetUniformLocation(shader, "diffuse");
 
     matrix4f m = Misery::ecs.getNativeComponent<Transform>(e.id, "transform")->toMatrix();
-    m = Misery::renderContext.projection * m;
+    m = Misery::renderContext.projection * (Misery::renderContext.camera.toMatrix() * m);
     glUniformMatrix4fv(mvp, 1, true, m[0]);
     glActiveTexture(GL_TEXTURE0);
     uint texture = *Misery::ecs.getNativeComponent<int>(material, "diffuse");
@@ -185,4 +185,8 @@ Java_com_klmn_misery_MiseryJNI_setLongComponent(JNIEnv *env, jobject thiz, jint 
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_setViewSize(JNIEnv *env, jobject thiz, jint width, jint height) {
     Misery::renderContext.setViewSize((uint) width, (uint) height);
+}extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_klmn_misery_MiseryJNI_getCameraTransform(JNIEnv *env, jobject thiz) {
+    return (long) &Misery::renderContext.camera;
 }

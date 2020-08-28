@@ -28,4 +28,5 @@ object MiseryJNI
     external fun setIntComponent(entity: Int, type: String, value: Int)
     external fun setLongComponent(entity: Int, type: String, value: Long)
     external fun setViewSize(width: Int, height: Int)
+    external fun getCameraTransform(): Long
 }

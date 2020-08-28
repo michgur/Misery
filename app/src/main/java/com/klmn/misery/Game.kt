@@ -28,8 +28,6 @@ class PigGame(activity: Activity) : Game(activity)
     }
 
     override fun init() {
-        val camera = Camera()
-
         val mesh = Mesh("pig.obj")
         val material = Material();
         material.diffuse = Texture(activity.assets, "pig.png")

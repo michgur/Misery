@@ -12,13 +12,11 @@
 struct RenderContext {
     uint width = 0, height = 0;
     matrix4f projection;
-    matrix4f camera;
+    Transform camera;
 
     void setViewSize(uint w, uint h);
 };
 
-namespace Misery {
-    extern RenderContext renderContext;
-}
+namespace Misery { extern RenderContext renderContext; }
 
 #endif //MISERY_RENDERCONTEXT_H
