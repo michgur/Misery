@@ -7,9 +7,11 @@
 #include "logging.h"
 #include "Transform.h"
 
+namespace Misery { ECS ecs; }
+
 uint ECS::newEntity(jobject jwrapper) {
     uint id = entities.size();
-    entities.push_back(Entity { .jwrapper = jwrapper });
+    entities.push_back(Entity { .id = id, .jwrapper = jwrapper });
 
     Transform transform;
     addNativeComponent(id, "transform", transform);
@@ -43,21 +45,15 @@ jobject* ECS::getComponent(uint entity, uint type) {
     return &components[type][component];
 }
 
-uint64_t ECS::createSignature(uint64_t signature, const char* arg) { return signature | 0x1u << getTypeID(arg); }
-
-template<typename ...T>
-uint64_t ECS::createSignature(uint64_t signature, const char* arg, T&... args) {
-    signature = createSignature(signature, arg);
-    return createSignature(signature, args...);
+uint64_t ECS::createSignature(int typeCount, const char* reqTypes[]) {
+    uint64_t signature = 0;
+    for (int i = 0; i < typeCount; i++)
+        signature |= 0x1u << getTypeID(reqTypes[i]);
+    return signature;
 }
 
-void ECS::addNativeSystem(void (*apply)(Entity&, float), const char* reqType0, const char* reqTypes, ...)
-{ nativeSystems.push_back(NativeSystem {createSignature(0, reqType0, reqTypes), apply });}
-
-ECS &ECS::getInstance() {
-    static ECS instance;
-    return instance;
-}
+void ECS::addNativeSystem(void (*apply)(Entity&, float), int typeCount, const char* reqTypes[])
+{ nativeSystems.push_back(NativeSystem {createSignature(typeCount, reqTypes), apply });}
 
 void ECS::addSystem(JNIEnv* env, jobject &jwrapper, jobjectArray &reqTypes) {
     uint64_t signature = 0;
@@ -99,3 +95,13 @@ void ECS::clear(JNIEnv* env) {
     for (auto& system : systems) env->DeleteGlobalRef(system.jwrapper);
     for (auto& type : types) delete[] type;
 }
+
+bool ECS::removeNativeComponent(uint entity, const char *type) { return removeNativeComponent(entity, getTypeID(type)); }
+bool ECS::removeNativeComponent(uint entity, uint type) {
+    entities[entity].components[type] = 0;
+    bool result = entities[entity].signature & 0x1u << type;
+    entities[entity].signature ^= 0x1u << type;
+    return result;
+}
+
+Entity &ECS::getEntity(uint id) { return entities[id]; }

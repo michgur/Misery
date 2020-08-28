@@ -16,14 +16,41 @@
 #include "ECS.h"
 #include "Transform.h"
 #include "assets.h"
+#include "RenderContext.h"
+
+void render(Entity &e, float delta) {
+    uint material = *Misery::ecs.getNativeComponent<uint>(e.id, "material");
+    int shader = *Misery::ecs.getNativeComponent<int>(material, "shader");
+    glUseProgram(shader);
+
+    int mvp = glGetUniformLocation(shader, "mvp");
+    int diffuse = glGetUniformLocation(shader, "diffuse");
+
+    matrix4f m = Misery::ecs.getNativeComponent<Transform>(e.id, "transform")->toMatrix();
+    m = Misery::renderContext.projection * m;
+    glUniformMatrix4fv(mvp, 1, true, m[0]);
+    glActiveTexture(GL_TEXTURE0);
+    uint texture = *Misery::ecs.getNativeComponent<int>(material, "diffuse");
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(diffuse, 0);
+
+    auto* mesh = (Misery::Mesh*) *Misery::ecs.getNativeComponent<long>(e.id, "mesh");
+    glBindVertexArray(mesh->vao);
+    glDrawElements(GL_TRIANGLES, mesh->size, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+}
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz,
                                                                  jobject asset_manager) {
     Misery::assetManager = AAssetManager_fromJava(env, asset_manager);
-    
-//    ECS::getInstance().addNativeSystem()
+
+    const char* types[] = { "transform", "mesh", "material" };
+    Misery::ecs.addNativeSystem(render, 3, types);
 }
 
 
@@ -62,7 +89,7 @@ Java_com_klmn_misery_MiseryJNI_createProgram(JNIEnv *env, jobject thiz,
 extern "C"
 JNIEXPORT jint JNICALL
 Java_com_klmn_misery_MiseryJNI_createEntity(JNIEnv *env, jobject thiz, jobject wrapper) {
-    return ECS::getInstance().newEntity(env->NewGlobalRef(wrapper));
+    return Misery::ecs.newEntity(env->NewGlobalRef(wrapper));
 }
 extern "C"
 JNIEXPORT void JNICALL
@@ -70,29 +97,29 @@ Java_com_klmn_misery_MiseryJNI_putComponent(JNIEnv *env, jobject thiz, jint enti
                                             jobject value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
     jobject allocValue = env->NewGlobalRef(value);
-    ECS::getInstance().addComponent(entity, typeChars, allocValue);
+    Misery::ecs.addComponent(entity, typeChars, allocValue);
     env->ReleaseStringUTFChars(type, typeChars);
 }
 extern "C"
 JNIEXPORT jobject JNICALL
 Java_com_klmn_misery_MiseryJNI_getComponent(JNIEnv *env, jobject thiz, jint entity, jstring type) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
-    void* cmp = ECS::getInstance().getComponent(entity, typeChars);
+    void* cmp = Misery::ecs.getComponent(entity, typeChars);
     env->ReleaseStringUTFChars(type, typeChars);
     return *((jobject*) cmp);
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_addSystem(JNIEnv *env, jobject thiz, jobjectArray types,
                                          jobject apply) {
-    ECS::getInstance().addSystem(env, apply, types);
+    Misery::ecs.addSystem(env, apply, types);
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_updateECS(JNIEnv *env, jobject thiz, jfloat delta) {
-    ECS::getInstance().update(env, delta);
+    Misery::ecs.update(env, delta);
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_clearECS(JNIEnv *env, jobject thiz) {
-    ECS::getInstance().clear(env);
+    Misery::ecs.clear(env);
 }
 
 extern "C"
@@ -119,12 +146,43 @@ Java_com_klmn_misery_MiseryJNI_setFloats(JNIEnv *env, jobject thiz, jlong pointe
 }extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_MiseryJNI_getTransformComponent(JNIEnv *env, jobject thiz, jint entity) {
-    auto* t = ECS::getInstance().getNativeComponent<Transform>(entity, "transform");
+    auto* t = Misery::ecs.getNativeComponent<Transform>(entity, "transform");
     return (long) t->data;
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_setTransformComponent__I_3F(JNIEnv *env, jobject thiz, jint entity,
                                                            jfloatArray f) {
-    auto* t = ECS::getInstance().getNativeComponent<Transform>(entity, "transform");
+    auto* t = Misery::ecs.getNativeComponent<Transform>(entity, "transform");
     env->GetFloatArrayRegion(f, 0, TRANSFORM_SIZE, t->data);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_setMaterialComponent(JNIEnv *env, jobject thiz, jint entity,
+                                                    jint material) {
+    Misery::ecs.removeNativeComponent(material, "transform");
+    uint ref = (uint) material;
+    Misery::ecs.addNativeComponent<uint>(entity, "material", ref);
+}extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_klmn_misery_MiseryJNI_getMaterialComponent(JNIEnv *env, jobject thiz, jint entity) {
+    uint id = *Misery::ecs.getNativeComponent<uint>(entity, "material");
+    return Misery::ecs.getEntity(id).jwrapper;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_setIntComponent(JNIEnv *env, jobject thiz, jint entity, jstring type, jint value) {
+    const char* typeChars = env->GetStringUTFChars(type, nullptr);
+    Misery::ecs.addNativeComponent<int>(entity, typeChars, value);
+    env->ReleaseStringUTFChars(type, typeChars);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_setLongComponent(JNIEnv *env, jobject thiz, jint entity,
+                                                jstring type, jlong value) {
+    const char* typeChars = env->GetStringUTFChars(type, nullptr);
+    Misery::ecs.addNativeComponent<long>(entity, typeChars, value);
+    env->ReleaseStringUTFChars(type, typeChars);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_setViewSize(JNIEnv *env, jobject thiz, jint width, jint height) {
+    Misery::renderContext.setViewSize((uint) width, (uint) height);
 }

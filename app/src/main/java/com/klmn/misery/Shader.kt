@@ -13,20 +13,16 @@ class Shader(val id: Int)
 {
     private val uniforms = mutableMapOf<String, Int>()
 
-    constructor(vertexSource: String, fragmentSource: String)
-            : this(MiseryJNI.createProgram(vertexSource, fragmentSource)) {
+    constructor(vertex: String, fragment: String)
+            : this(MiseryJNI.createProgram(vertex, fragment)) {
         bind()
         val count = IntArray(2)
         glGetProgramiv(id, GL_ACTIVE_ATTRIBUTES, count, 0)
         glGetProgramiv(id, GL_ACTIVE_UNIFORMS, count, 1)
 
-        val sizeAndType = IntArray(2)
-        /** for (i in 0 until count[0]) {
-        val name = glGetActiveAttrib(id, i, sizeAndType, 0, sizeAndType, 1)
-        }*/
-        count[1] = 100
+        val buffer = IntArray(2)
         for (i in 0 until count[1]) {
-            val name = glGetActiveUniform(id, i, sizeAndType, 0, sizeAndType, 1)
+            val name = glGetActiveUniform(id, i, buffer, 0, buffer, 1)
             uniforms[name] = glGetUniformLocation(id, name)
         }
         unbind()

@@ -29,8 +29,11 @@ struct Transform {
 
     Transform() {}
 
-    inline matrix4f toMatrix();
+    matrix4f toMatrix();
 };
 
+namespace Misery {
+    matrix4f createProjectionMatrix(float fov, float width, float height, float near, float far);
+}
 
 #endif //MISERY_TRANSFORM_H

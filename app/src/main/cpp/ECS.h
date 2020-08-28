@@ -56,11 +56,10 @@ class ECS {
     std::vector<System> systems;
     std::vector<NativeSystem> nativeSystems;
 
-    template<typename... T>
-    uint64_t createSignature(uint64_t signature, const char* arg, T&... args);
-    uint64_t createSignature(uint64_t signature, const char* arg);
+    uint64_t createSignature(int typeCount, const char* reqTypes[]);
 public:
     uint newEntity(jobject jwrapper);
+    Entity& getEntity(uint id);
     uint getTypeID(const char* type);
     template <typename T>
     void addNativeComponent(uint entity, uint type, T& component);
@@ -70,17 +69,19 @@ public:
     T* getNativeComponent(uint entity, uint type);
     template<typename T>
     T* getNativeComponent(uint entity, const char* type);
+    bool removeNativeComponent(uint entity, uint type);
+    bool removeNativeComponent(uint entity, const char* type);
     void addComponent(uint entity, uint type, jobject& component);
     void addComponent(uint entity, const char* type, jobject& component);
     jobject* getComponent(uint entity, uint type);
     jobject* getComponent(uint entity, const char* type);
-    void addNativeSystem(void (*apply)(Entity&, float), const char* reqType0, const char* reqTypes, ...);
+    void addNativeSystem(void (*apply)(Entity&, float), int typeCount, const char* reqTypes[]);
     void addSystem(JNIEnv* env, jobject& jwrapper, jobjectArray& reqTypes);
     void update(JNIEnv* env, jfloat delta);
     void clear(JNIEnv* env);
-
-    static ECS& getInstance();
 };
+
+namespace Misery { extern ECS ecs; }
 
 template<typename T>
 void ECS::addNativeComponent(uint entity, uint type, T &component) {
@@ -98,8 +99,10 @@ void ECS::addNativeComponent(uint entity, const char* type, T &component)
 { addNativeComponent(entity, getTypeID(type), component); }
 
 template<typename T>
-T *ECS::getNativeComponent(uint entity, uint type)
-{ return ((std::vector<T>*) nativeComponents[type]->data())->data() + entity; }
+T *ECS::getNativeComponent(uint entity, uint type) {
+    uint id = entities[entity].components[type];
+    return ((std::vector<T>*) nativeComponents[type]->data())->data() + id;
+}
 
 template<typename T>
 T *ECS::getNativeComponent(uint entity, const char* type)

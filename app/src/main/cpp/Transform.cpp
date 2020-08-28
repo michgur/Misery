@@ -3,6 +3,7 @@
 //
 
 #include "Transform.h"
+#include <assimp/matrix4x4.inl>
 
 matrix4f Transform::toMatrix() {
     matrix4f m = matrix4f();
@@ -32,4 +33,21 @@ matrix4f Transform::toMatrix() {
     m.c4 = translation.z;
 
     return m;
+}
+
+matrix4f Misery::createProjectionMatrix(float fov, float width, float height, float near, float far) {
+    matrix4f mat4f;
+
+    float ar = width / height;
+    float tan = std::tan(fov / 2);
+    float range = near - far;
+
+    mat4f.a1 = -1 / (tan * ar);
+    mat4f.b2 = 1 / tan;
+    mat4f.c3 = (near + far) / range;
+    mat4f.c4 = 2 * far * near / range;
+    mat4f.d3 = -1;
+    mat4f.d4 = 0;
+
+    return mat4f;
 }

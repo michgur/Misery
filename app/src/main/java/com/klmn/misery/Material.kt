@@ -1,8 +1,6 @@
 package com.klmn.misery
 
-class Material {
-    val data = Entity()
-
+class Material(val data: Entity = Entity()) {
     var shader: Shader
         get() = Shader(data["shader", Int::class]!!)
         set(value) { data["shader"] = value.id }

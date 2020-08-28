@@ -24,26 +24,29 @@ class PigGame(activity: Activity) : Game(activity)
     private lateinit var projection: Projection
     override fun onViewChanged(width: Int, height: Int) {
         projection = Perspective(Math.PI.toFloat() * 0.5f, width, height, 0.1f, 1000f)
+        MiseryJNI.setViewSize(width, height)
     }
 
     override fun init() {
-        val shader = Shader("vertex.glsl", "fragment.glsl")
         val camera = Camera()
 
         val mesh = Mesh("pig.obj")
-        val texture = Texture(activity.assets, "pig.png")
+        val material = Material();
+        material.diffuse = Texture(activity.assets, "pig.png")
+        material.shader = Shader("vertex.glsl", "fragment.glsl")
         val transform = Transform(
                 scale = Vec3f(0.1f),
                 translation = Vec3f(0f, -1f, 20f),
-                rotation = Quaternion.rotation(Vec3f.LEFT, 0.5f)
+                rotation = Quaternion.rotation(Vec3f.RIGHT, 0.5f)
         )
         for (i in 0..5) {
             val pig = Entity()
-            pig["model"] = Model(mesh, texture)
+            pig["mesh"] = mesh
+            pig["material"] = material
             pig["transform"] = transform.copy(scale = Vec3f(0.05f), translation = Vec3f(
                     Random.nextFloat() * 10f - 5f,
                     Random.nextFloat() * 10f - 5f,
-                    Random.nextFloat() * 30f + 10f
+                    -Random.nextFloat() * 30f - 10f
             ))
             var touchID = -1
             var touchPos: Vec2f? = null
@@ -60,16 +63,16 @@ class PigGame(activity: Activity) : Game(activity)
                             )
                             val pigTransform = this["transform", Transform::class]!!
                             pigTransform.translation += Vec3f(
-                                    (touchPos!!.x - newPos.x) * -0.02f,
+                                    (touchPos!!.x - newPos.x) * 0.02f,
                                     0f,
-                                    (touchPos!!.y - newPos.y) * 0.01f
+                                    (touchPos!!.y - newPos.y) * -0.01f
                             )
                             fun clamp(value: Float, bottom: Float, top: Float) = min(top, max(bottom, value))
                             pigTransform.translation =
                                     Vec3f(
                                             clamp(pigTransform.translation.x, -15f, 15f),
                                             pigTransform.translation.y,
-                                            clamp(pigTransform.translation.z, -2f, 40f)
+                                            clamp(pigTransform.translation.z, -40f, 2f)
                                     )
 
                             touchPos = newPos
@@ -77,10 +80,6 @@ class PigGame(activity: Activity) : Game(activity)
                     }
             )
             pig["movementControl"] = movementControl
-        }
-
-        system("model", "transform") { entity, _ ->
-            renderModel(entity["model", Model::class]!!, entity["transform", Transform::class]!!, shader, projection, camera)
         }
 
         val velocity = 0.1f
