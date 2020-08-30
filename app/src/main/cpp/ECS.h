@@ -70,7 +70,9 @@ public:
     void removeComponent(uint entity, uint type);
     void removeComponent(uint entity, const char* type);
     void addNativeSystem(void (*apply)(Entity&, float), int typeCount, const char* reqTypes[]);
+    void removeNativeSystem(void (*apply)(Entity&, float));
     void addSystem(JNIEnv* env, jobject& jwrapper, jobjectArray& reqTypes);
+    void removeSystem(JNIEnv* env, jobject& jwrapper);
     void update(JNIEnv* env, jfloat delta);
     void clear(JNIEnv* env);
 };

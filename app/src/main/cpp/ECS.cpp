@@ -130,3 +130,21 @@ void ECS::removeEntity(JNIEnv *env, uint entity) {
     }
     entities.pop_back();
 }
+
+void ECS::removeNativeSystem(void (*apply)(Entity &, float)) {
+    for (uint i = 0; i < nativeSystems.size(); i++)
+        if (nativeSystems[i].apply == apply) {
+            nativeSystems.erase(nativeSystems.begin() + i);
+            break;
+        }
+}
+
+void ECS::removeSystem(JNIEnv *env, jobject &jwrapper) {
+    for (uint i = 0; i < systems.size(); i++) {
+        if (systems[i].jwrapper == jwrapper) {
+            env->DeleteGlobalRef(jwrapper);
+            systems.erase(systems.begin() + i);
+            break;
+        }
+    }
+}
