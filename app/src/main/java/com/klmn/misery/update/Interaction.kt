@@ -1,4 +1,4 @@
-package com.klmn.misery
+package com.klmn.misery.update
 
 import com.klmn.misery.math.AABB
 import com.klmn.misery.math.Vec3f

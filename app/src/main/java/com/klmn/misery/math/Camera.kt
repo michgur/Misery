@@ -1,7 +1,7 @@
 package com.klmn.misery.math
 
 import com.klmn.misery.MiseryJNI
-import com.klmn.misery.Transform
+import com.klmn.misery.update.Transform
 
 /**
  * ಠ^ಠ.

@@ -1,4 +1,4 @@
-package com.klmn.misery
+package com.klmn.misery.update
 
 import android.view.MotionEvent
 

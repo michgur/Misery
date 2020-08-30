@@ -1,4 +1,4 @@
-package com.klmn.misery
+package com.klmn.misery.render
 
 import android.content.res.AssetManager
 import android.graphics.Bitmap

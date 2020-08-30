@@ -1,5 +1,8 @@
-package com.klmn.misery
+package com.klmn.misery.update
 
+import com.klmn.misery.MiseryJNI
+import com.klmn.misery.render.Material
+import com.klmn.misery.render.Mesh
 import kotlin.reflect.KClass
 import kotlin.reflect.full.safeCast
 
@@ -21,4 +24,6 @@ class Entity {
     }
 }
 
-fun system(vararg types: String, apply: (Entity, Float) -> Unit) { MiseryJNI.addSystem(arrayOf(*types), apply) }
+fun system(vararg types: String, apply: (Entity, Float) -> Unit) {
+    MiseryJNI.addSystem(arrayOf(*types), apply)
+}

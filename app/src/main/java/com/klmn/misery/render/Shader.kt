@@ -1,6 +1,7 @@
-package com.klmn.misery
+package com.klmn.misery.render
 
 import android.opengl.GLES30.*
+import com.klmn.misery.MiseryJNI
 import com.klmn.misery.math.Mat4f
 import com.klmn.misery.math.Vec2f
 import com.klmn.misery.math.Vec3f

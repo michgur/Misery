@@ -1,4 +1,6 @@
-package com.klmn.misery
+package com.klmn.misery.render
+
+import com.klmn.misery.update.Entity
 
 class Material(val data: Entity = Entity()) {
     var shader: Shader

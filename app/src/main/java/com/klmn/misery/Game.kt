@@ -3,6 +3,14 @@ package com.klmn.misery
 import android.app.Activity
 import android.view.MotionEvent
 import com.klmn.misery.math.*
+import com.klmn.misery.render.Material
+import com.klmn.misery.render.Mesh
+import com.klmn.misery.render.Shader
+import com.klmn.misery.render.Texture
+import com.klmn.misery.update.Entity
+import com.klmn.misery.update.TouchControls
+import com.klmn.misery.update.Transform
+import com.klmn.misery.update.system
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -21,11 +29,7 @@ open class Game(val activity: Activity)
 
 class PigGame(activity: Activity) : Game(activity)
 {
-    private lateinit var projection: Projection
-    override fun onViewChanged(width: Int, height: Int) {
-        projection = Perspective(Math.PI.toFloat() * 0.5f, width, height, 0.1f, 1000f)
-        MiseryJNI.setViewSize(width, height)
-    }
+    override fun onViewChanged(width: Int, height: Int) { MiseryJNI.setViewSize(width, height) }
 
     override fun init() {
         val mesh = Mesh("pig.obj")
@@ -33,15 +37,14 @@ class PigGame(activity: Activity) : Game(activity)
         material.diffuse = Texture(activity.assets, "pig.png")
         material.shader = Shader("vertex.glsl", "fragment.glsl")
         val transform = Transform(
-                scale = Vec3f(0.1f),
-                translation = Vec3f(0f, -1f, 20f),
+                scale = Vec3f(0.05f),
                 rotation = Quaternion.rotation(Vec3f.RIGHT, 0.5f)
         )
         for (i in 0..5) {
             val pig = Entity()
             pig["mesh"] = mesh
             pig["material"] = material
-            pig["transform"] = transform.copy(scale = Vec3f(0.05f), translation = Vec3f(
+            pig["transform"] = transform.copy(translation = Vec3f(
                     Random.nextFloat() * 10f - 5f,
                     Random.nextFloat() * 10f - 5f,
                     -Random.nextFloat() * 30f - 10f

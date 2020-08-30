@@ -1,9 +1,11 @@
-package com.klmn.misery
+package com.klmn.misery.render
 
 import android.annotation.SuppressLint
 import android.opengl.GLES30.*
 import android.opengl.GLSurfaceView
 import android.view.MotionEvent
+import com.klmn.misery.Game
+import com.klmn.misery.MiseryJNI
 import com.klmn.misery.math.Vec3f
 import java.lang.System.nanoTime
 import javax.microedition.khronos.egl.EGLConfig

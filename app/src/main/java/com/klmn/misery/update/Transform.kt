@@ -1,5 +1,6 @@
-package com.klmn.misery
+package com.klmn.misery.update
 
+import com.klmn.misery.MiseryJNI
 import com.klmn.misery.math.Mat4f
 import com.klmn.misery.math.Quaternion
 import com.klmn.misery.math.Vec3f

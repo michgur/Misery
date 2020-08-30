@@ -1,6 +1,7 @@
 package com.klmn.misery
 
 import android.content.res.AssetManager
+import com.klmn.misery.update.Entity
 import java.lang.System
 
 object MiseryJNI
