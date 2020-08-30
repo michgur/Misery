@@ -73,7 +73,7 @@ void ECS::update(JNIEnv* env, jfloat delta) {
 void ECS::clear(JNIEnv* env) {
     for (auto& compClass : components) compClass->components.clear();
     for (auto& entity : entities) {
-        delete[] entity.components;
+        entity.components.clear();
         env->DeleteGlobalRef(entity.jwrapper);
     }
     for (auto& system : systems) env->DeleteGlobalRef(system.jwrapper);
