@@ -22,7 +22,7 @@ struct Entity {
 };
 
 struct NativeComponentBase {
-    virtual void* data() = 0;
+    virtual void* data() { return nullptr; }
     virtual ~NativeComponentBase() {}
 };
 template <typename T>
@@ -41,17 +41,9 @@ struct NativeSystem {
     void (*apply)(Entity&, float);
 };
 
-// TODO: better memory management (store component values in one place, override unused components)
-//       consider splitting to native / java components and systems
-//       add basic component classes- think about the desired interface for the kotlin code
-// the advantage of having the ECS in native code is storage efficiency,
-//      that's the main principle to consider for this design
-// the second thing to consider- minimizing JNI traffic. things like the transform component
-//      may be used excessively in both native code and java
 class ECS {
     std::vector<Entity> entities;
-    std::vector<jobject> components[MAX_COMPONENTS];
-    std::map<uint, NativeComponentBase*> nativeComponents;
+    NativeComponentBase* components[MAX_COMPONENTS];
     std::vector<const char*> types;
     std::vector<System> systems;
     std::vector<NativeSystem> nativeSystems;
@@ -62,19 +54,17 @@ public:
     Entity& getEntity(uint id);
     uint getTypeID(const char* type);
     template <typename T>
-    void addNativeComponent(uint entity, uint type, T& component);
+    void addComponent(uint entity, uint type, T& component);
     template <typename T>
-    void addNativeComponent(uint entity, const char* type, T& component);
+    void addComponent(uint entity, const char* type, T& component);
     template <typename T>
-    T* getNativeComponent(uint entity, uint type);
+    T* getComponent(uint entity, uint type);
     template<typename T>
-    T* getNativeComponent(uint entity, const char* type);
-    bool removeNativeComponent(uint entity, uint type);
-    bool removeNativeComponent(uint entity, const char* type);
-    void addComponent(uint entity, uint type, jobject& component);
-    void addComponent(uint entity, const char* type, jobject& component);
-    jobject* getComponent(uint entity, uint type);
-    jobject* getComponent(uint entity, const char* type);
+    T* getComponent(uint entity, const char* type);
+    template<typename T>
+    bool removeComponent(uint entity, uint type);
+    template<typename T>
+    bool removeComponent(uint entity, const char* type);
     void addNativeSystem(void (*apply)(Entity&, float), int typeCount, const char* reqTypes[]);
     void addSystem(JNIEnv* env, jobject& jwrapper, jobjectArray& reqTypes);
     void update(JNIEnv* env, jfloat delta);
@@ -84,10 +74,11 @@ public:
 namespace Misery { extern ECS ecs; }
 
 template<typename T>
-void ECS::addNativeComponent(uint entity, uint type, T &component) {
-    auto it = nativeComponents.find(type);
-    if (it == nativeComponents.end()) nativeComponents[type] = new NativeComponentClass<T>();
-    auto* data = (std::vector<T>*) nativeComponents[type]->data();
+void ECS::addComponent(uint entity, uint type, T &component) {
+    if (components[type] == nullptr)
+        components[type] = new NativeComponentClass<T>();
+
+    auto data = (std::vector<T>*) components[type]->data();
     entities[entity].components[type] = data->size();
     data->push_back(component);
 
@@ -95,17 +86,33 @@ void ECS::addNativeComponent(uint entity, uint type, T &component) {
 }
 
 template<typename T>
-void ECS::addNativeComponent(uint entity, const char* type, T &component)
-{ addNativeComponent(entity, getTypeID(type), component); }
+void ECS::addComponent(uint entity, const char* type, T &component)
+{ addComponent(entity, getTypeID(type), component); }
 
 template<typename T>
-T *ECS::getNativeComponent(uint entity, uint type) {
-    uint id = entities[entity].components[type];
-    return ((std::vector<T>*) nativeComponents[type]->data())->data() + id;
+T *ECS::getComponent(uint entity, uint type) {
+    uint component = entities[entity].components[type];
+    auto data = (std::vector<T>*) components[type]->data();
+    return data->data() + component;
 }
 
 template<typename T>
-T *ECS::getNativeComponent(uint entity, const char* type)
-{ return getNativeComponent<T>(entity, getTypeID(type)); }
+T *ECS::getComponent(uint entity, const char* type)
+{ return getComponent<T>(entity, getTypeID(type)); }
+
+template<typename T>
+bool ECS::removeComponent(uint entity, const char *type) { return removeComponent<T>(entity, getTypeID(type)); }
+
+template<typename T>
+bool ECS::removeComponent(uint entity, uint type) {
+//    auto data = (std::vector<T>*) components[type];
+//    data->at(entities[entity].components[type]) = data->back();
+//    data->pop_back();
+
+    entities[entity].components[type] = 0;
+    bool result = entities[entity].signature & 0x1u << type;
+    entities[entity].signature ^= 0x1u << type;
+    return result;
+}
 
 #endif //MISERY_ECS_H
