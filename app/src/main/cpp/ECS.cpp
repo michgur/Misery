@@ -14,7 +14,7 @@ uint ECS::newEntity(jobject jwrapper) {
     entities.push_back(Entity { .id = id, .jwrapper = jwrapper });
 
     Transform transform;
-    addComponent(id, "transform", transform);
+    putComponent(id, "transform", transform);
 
     return id;
 }
@@ -71,6 +71,7 @@ void ECS::update(JNIEnv* env, jfloat delta) {
 }
 
 void ECS::clear(JNIEnv* env) {
+    for (auto& compClass : components) compClass->components.clear();
     for (auto& entity : entities) {
         delete[] entity.components;
         env->DeleteGlobalRef(entity.jwrapper);
@@ -80,3 +81,28 @@ void ECS::clear(JNIEnv* env) {
 }
 
 Entity &ECS::getEntity(uint id) { return entities[id]; }
+
+void ECS::removeComponent(uint entity, const char *type) { return removeComponent(entity, getTypeID(type)); }
+void ECS::removeComponent(uint entity, uint type) {
+    if (!(entities[entity].signature & 0x1u << type)) return;
+
+    std::vector<uint8_t>& data = components[type]->components;
+    // the removed component
+    size_t comp = entities[entity].components[type];
+    // the last component in the vector, we move it to the position of the removed component
+    size_t backComp = data.size() - components[type]->componentSize();
+
+    components[type]->destroyComponent(comp);
+
+    // if comp is not the last component, swap them
+    if (comp != backComp) {
+        std::memcpy(&data[comp], &data[backComp], components[type]->componentSize());
+        // update any entities that refer to backComp
+        for (auto& e : entities)
+            if (e.components[type] == backComp) e.components[type] = comp;
+    }
+    data.resize(backComp);
+
+    entities[entity].components[type] = 0;
+    entities[entity].signature ^= 0x1u << type;
+}

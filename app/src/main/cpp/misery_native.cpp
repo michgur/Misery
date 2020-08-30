@@ -97,7 +97,7 @@ Java_com_klmn_misery_MiseryJNI_putComponent(JNIEnv *env, jobject thiz, jint enti
                                             jobject value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
     jobject allocValue = env->NewGlobalRef(value);
-    Misery::ecs.addComponent(entity, typeChars, allocValue);
+    Misery::ecs.putComponent(entity, typeChars, allocValue);
     env->ReleaseStringUTFChars(type, typeChars);
 }
 extern "C"
@@ -159,9 +159,9 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_setMaterialComponent(JNIEnv *env, jobject thiz, jint entity,
                                                     jint material) {
-    Misery::ecs.removeComponent<Transform>(material, "transform");
+    Misery::ecs.removeComponent(material, "transform");
     uint ref = (uint) material;
-    Misery::ecs.addComponent<uint>(entity, "material", ref);
+    Misery::ecs.putComponent<uint>(entity, "material", ref);
 }extern "C"
 JNIEXPORT jobject JNICALL
 Java_com_klmn_misery_MiseryJNI_getMaterialComponent(JNIEnv *env, jobject thiz, jint entity) {
@@ -172,14 +172,14 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_setIntComponent(JNIEnv *env, jobject thiz, jint entity, jstring type, jint value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
-    Misery::ecs.addComponent<int>(entity, typeChars, value);
+    Misery::ecs.putComponent<int>(entity, typeChars, value);
     env->ReleaseStringUTFChars(type, typeChars);
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_setLongComponent(JNIEnv *env, jobject thiz, jint entity,
                                                 jstring type, jlong value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
-    Misery::ecs.addComponent<long>(entity, typeChars, value);
+    Misery::ecs.putComponent<long>(entity, typeChars, value);
     env->ReleaseStringUTFChars(type, typeChars);
 }extern "C"
 JNIEXPORT void JNICALL
