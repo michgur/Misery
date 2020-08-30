@@ -14,6 +14,7 @@ struct RenderContext {
     matrix4f projection;
     Transform camera;
 
+    void (*render)(Entity&, float);
     void setViewSize(uint w, uint h);
 };
 

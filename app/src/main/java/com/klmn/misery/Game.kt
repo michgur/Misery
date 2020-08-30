@@ -33,7 +33,7 @@ class PigGame(activity: Activity) : Game(activity)
 
     override fun init() {
         val mesh = Mesh("pig.obj")
-        val material = Material();
+        val material = Material()
         material.diffuse = Texture(activity.assets, "pig.png")
         material.shader = Shader("vertex.glsl", "fragment.glsl")
         val transform = Transform(

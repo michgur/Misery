@@ -18,30 +18,6 @@
 #include "assets.h"
 #include "RenderContext.h"
 
-void render(Entity &e, float delta) {
-    uint material = *Misery::ecs.getComponent<uint>(e.id, "material");
-    int shader = *Misery::ecs.getComponent<int>(material, "shader");
-    glUseProgram(shader);
-
-    int mvp = glGetUniformLocation(shader, "mvp");
-    int diffuse = glGetUniformLocation(shader, "diffuse");
-
-    matrix4f m = Misery::ecs.getComponent<Transform>(e.id, "transform")->toMatrix();
-    m = Misery::renderContext.projection * (Misery::renderContext.camera.toMatrix() * m);
-    glUniformMatrix4fv(mvp, 1, true, m[0]);
-    glActiveTexture(GL_TEXTURE0);
-    uint texture = *Misery::ecs.getComponent<int>(material, "diffuse");
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(diffuse, 0);
-
-    auto* mesh = (Misery::Mesh*) *Misery::ecs.getComponent<long>(e.id, "mesh");
-    glBindVertexArray(mesh->vao);
-    glDrawElements(GL_TRIANGLES, mesh->size, GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glUseProgram(0);
-}
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -50,7 +26,7 @@ Java_com_klmn_misery_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz,
     Misery::assetManager = AAssetManager_fromJava(env, asset_manager);
 
     const char* types[] = { "transform", "mesh", "material" };
-    Misery::ecs.addNativeSystem(render, 3, types);
+    Misery::ecs.addNativeSystem(Misery::renderContext.render, 3, types);
 }
 
 
@@ -170,13 +146,13 @@ Java_com_klmn_misery_MiseryJNI_getMaterialComponent(JNIEnv *env, jobject thiz, j
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_MiseryJNI_setIntComponent(JNIEnv *env, jobject thiz, jint entity, jstring type, jint value) {
+Java_com_klmn_misery_MiseryJNI_putIntComponent(JNIEnv *env, jobject thiz, jint entity, jstring type, jint value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
     Misery::ecs.putComponent<int>(entity, typeChars, value);
     env->ReleaseStringUTFChars(type, typeChars);
 }extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_MiseryJNI_setLongComponent(JNIEnv *env, jobject thiz, jint entity,
+Java_com_klmn_misery_MiseryJNI_putLongComponent(JNIEnv *env, jobject thiz, jint entity,
                                                 jstring type, jlong value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
     Misery::ecs.putComponent<long>(entity, typeChars, value);

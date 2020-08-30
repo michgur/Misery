@@ -12,24 +12,29 @@ object MiseryJNI
     external fun loadMesh(file: String, ext: String): Long
     external fun drawMesh(pointer: Long)
     external fun createProgram(vertexFile: String, fragmentFile: String): Int
-    external fun createEntity(wrapper: Entity): Int
-    external fun removeEntity(entity: Int)
-    external fun putComponent(entity: Int, type: String, value: Any)
-    external fun getComponent(entity: Int, type: String): Any
-    external fun removeComponent(entity: Int, type: String)
-    external fun addSystem(types: Array<String>, apply: (Entity, Float) -> Unit)
+
     external fun updateECS(delta: Float)
     external fun clearECS()
-    external fun getFloat(pointer: Long, offset: Int): Float
-    external fun setFloat(pointer: Long, f: Float, offset: Int)
-    external fun getFloats(pointer: Long, count: Int, offset: Int): FloatArray
-    external fun setFloats(pointer: Long, f: FloatArray, offset: Int)
+
+    external fun addSystem(types: Array<String>, apply: (Entity, Float) -> Unit)
+    external fun createEntity(wrapper: Entity): Int
+    external fun removeEntity(entity: Int)
+
+    external fun putComponent(entity: Int, type: String, value: Any)
+    external fun putIntComponent(entity: Int, type: String, value: Int)
+    external fun putLongComponent(entity: Int, type: String, value: Long)
+    external fun getComponent(entity: Int, type: String): Any
+    external fun removeComponent(entity: Int, type: String)
     external fun getTransformComponent(entity: Int): Long
     external fun setTransformComponent(entity: Int, f: FloatArray)
     external fun setMaterialComponent(entity: Int, material: Int)
     external fun getMaterialComponent(entity: Int): Entity
-    external fun setIntComponent(entity: Int, type: String, value: Int)
-    external fun setLongComponent(entity: Int, type: String, value: Long)
-    external fun setViewSize(width: Int, height: Int)
+
+    external fun getFloat(pointer: Long, offset: Int): Float
+    external fun setFloat(pointer: Long, f: Float, offset: Int)
+    external fun getFloats(pointer: Long, count: Int, offset: Int): FloatArray
+    external fun setFloats(pointer: Long, f: FloatArray, offset: Int)
+
     external fun getCameraTransform(): Long
+    external fun setViewSize(width: Int, height: Int)
 }
