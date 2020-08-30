@@ -18,7 +18,6 @@ struct Entity {
     uint id;
     uint64_t signature = 0;
     std::map<uint, size_t> components;
-//    size_t* components = new size_t[MAX_COMPONENTS];
     jobject jwrapper;
 };
 
@@ -57,7 +56,8 @@ class ECS {
     uint64_t createSignature(int typeCount, const char* reqTypes[]);
 public:
     uint newEntity(jobject jwrapper);
-    Entity& getEntity(uint id);
+    Entity& getEntity(uint entity);
+    void removeEntity(JNIEnv* env, uint entity);
     uint getTypeID(const char* type);
     template <typename T>
     void putComponent(uint entity, uint type, T& component);

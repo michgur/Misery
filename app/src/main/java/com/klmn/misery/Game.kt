@@ -40,8 +40,10 @@ class PigGame(activity: Activity) : Game(activity)
                 scale = Vec3f(0.05f),
                 rotation = Quaternion.rotation(Vec3f.RIGHT, 0.5f)
         )
+        val pigs = mutableListOf<Entity>()
         for (i in 0..5) {
             val pig = Entity()
+            pigs.add(pig)
             pig["mesh"] = mesh
             pig["material"] = material
             pig["transform"] = transform.copy(translation = Vec3f(
@@ -90,6 +92,16 @@ class PigGame(activity: Activity) : Game(activity)
 
         system("movementControl") { entity, _ ->
             inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }
+        }
+
+        var count = 0f
+        system("diffuse") { _, delta ->
+            if (pigs.isEmpty()) return@system
+            count += delta
+            if (count > 3f) {
+                count = 0f
+                pigs.removeLast().destroy()
+            }
         }
     }
 }

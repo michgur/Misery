@@ -22,6 +22,11 @@ class Entity {
         Mesh::class -> MiseryJNI.setLongComponent(id, type, (value as Mesh).pointer)
         else -> MiseryJNI.putComponent(id, type, value);
     }
+
+    fun destroy() = MiseryJNI.removeEntity(id)
+
+    override fun equals(other: Any?) = other is Entity && other.id == id
+    override fun hashCode() = id
 }
 
 fun system(vararg types: String, apply: (Entity, Float) -> Unit) {

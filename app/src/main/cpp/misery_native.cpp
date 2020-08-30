@@ -189,4 +189,16 @@ Java_com_klmn_misery_MiseryJNI_setViewSize(JNIEnv *env, jobject thiz, jint width
 JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_MiseryJNI_getCameraTransform(JNIEnv *env, jobject thiz) {
     return (long) &Misery::renderContext.camera;
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_removeComponent(JNIEnv *env, jobject thiz, jint entity,
+                                               jstring type) {
+    const char* typeChars = env->GetStringUTFChars(type, nullptr);
+    env->DeleteGlobalRef(*Misery::ecs.getComponent<jobject>(entity, typeChars));
+    Misery::ecs.removeComponent(entity, typeChars);
+    env->ReleaseStringUTFChars(type, typeChars);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_removeEntity(JNIEnv *env, jobject thiz, jint entity) {
+    Misery::ecs.removeEntity(env, entity);
 }

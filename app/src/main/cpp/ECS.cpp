@@ -71,7 +71,10 @@ void ECS::update(JNIEnv* env, jfloat delta) {
 }
 
 void ECS::clear(JNIEnv* env) {
-    for (auto& compClass : components) compClass->components.clear();
+    for (auto& compClass : components) {
+        compClass->components.clear();
+        delete compClass;
+    }
     for (auto& entity : entities) {
         entity.components.clear();
         env->DeleteGlobalRef(entity.jwrapper);
@@ -80,7 +83,7 @@ void ECS::clear(JNIEnv* env) {
     for (auto& type : types) delete[] type;
 }
 
-Entity &ECS::getEntity(uint id) { return entities[id]; }
+Entity &ECS::getEntity(uint entity) { return entities[entity]; }
 
 void ECS::removeComponent(uint entity, const char *type) { return removeComponent(entity, getTypeID(type)); }
 void ECS::removeComponent(uint entity, uint type) {
@@ -105,4 +108,25 @@ void ECS::removeComponent(uint entity, uint type) {
 
     entities[entity].components[type] = 0;
     entities[entity].signature ^= 0x1u << type;
+}
+
+void ECS::removeEntity(JNIEnv *env, uint entity) {
+    // delete entity data
+    env->DeleteGlobalRef(entities[entity].jwrapper);
+    for (auto it : entities[entity].components) {
+        auto compClass = dynamic_cast<ComponentClass<jobject>*>(components[it.first]);
+        if (compClass != nullptr)
+            env->DeleteGlobalRef(*(jobject*) &compClass->components[it.second]);
+        removeComponent(entity, it.first);
+    }
+
+    if (entity != entities.size() - 1) {
+        entities[entity] = entities.back();
+        entities[entity].id = entity;
+
+        jclass entityClass = env->GetObjectClass(entities[entity].jwrapper);
+        jfieldID idField = env->GetFieldID(entityClass, "id", "I");
+        env->SetIntField(entities[entity].jwrapper, idField, entity);
+    }
+    entities.pop_back();
 }

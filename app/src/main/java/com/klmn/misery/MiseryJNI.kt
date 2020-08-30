@@ -13,8 +13,10 @@ object MiseryJNI
     external fun drawMesh(pointer: Long)
     external fun createProgram(vertexFile: String, fragmentFile: String): Int
     external fun createEntity(wrapper: Entity): Int
+    external fun removeEntity(entity: Int)
     external fun putComponent(entity: Int, type: String, value: Any)
     external fun getComponent(entity: Int, type: String): Any
+    external fun removeComponent(entity: Int, type: String)
     external fun addSystem(types: Array<String>, apply: (Entity, Float) -> Unit)
     external fun updateECS(delta: Float)
     external fun clearECS()
