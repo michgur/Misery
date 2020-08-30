@@ -89,6 +89,10 @@ void ECS::removeComponent(uint entity, const char *type) { return removeComponen
 void ECS::removeComponent(uint entity, uint type) {
     if (!(entities[entity].signature & 0x1u << type)) return;
 
+    // invoke corresponding listeners
+    for (auto listener : listeners)
+        if (listener->signature & 0x1u << type) listener->onRemoveComponent(entity, type);
+
     std::vector<uint8_t>& data = components[type]->components;
     // the removed component
     size_t comp = entities[entity].components[type];
@@ -139,6 +143,7 @@ void ECS::removeNativeSystem(void (*apply)(Entity &, float)) {
         }
 }
 
+// tbh I don't think this works, should probably index systems by integer ids
 void ECS::removeSystem(JNIEnv *env, jobject &jwrapper) {
     for (uint i = 0; i < systems.size(); i++) {
         if (systems[i].jwrapper == jwrapper) {

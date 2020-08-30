@@ -46,12 +46,20 @@ struct NativeSystem {
     void (*apply)(Entity&, float);
 };
 
+struct ECSListener {
+    uint64_t signature;
+
+    virtual void onPutComponent(uint entity, uint type);
+    virtual void onRemoveComponent(uint entity, uint type);
+};
+
 class ECS {
     std::vector<Entity> entities;
     ComponentClassBase* components[MAX_COMPONENTS];
     std::vector<const char*> types;
     std::vector<System> systems;
     std::vector<NativeSystem> nativeSystems;
+    std::vector<ECSListener*> listeners;
 
     uint64_t createSignature(int typeCount, const char* reqTypes[]);
 public:
@@ -73,6 +81,7 @@ public:
     void removeNativeSystem(void (*apply)(Entity&, float));
     void addSystem(JNIEnv* env, jobject& jwrapper, jobjectArray& reqTypes);
     void removeSystem(JNIEnv* env, jobject& jwrapper);
+    inline void addListener(ECSListener* listener) { listeners.push_back(listener); }
     void update(JNIEnv* env, jfloat delta);
     void clear(JNIEnv* env);
 };
@@ -98,6 +107,10 @@ void ECS::putComponent(uint entity, uint type, T &component) {
 
     entities[entity].components[type] = index;
     entities[entity].signature |= (0x1u << type);
+
+    // invoke corresponding listeners
+    for (auto listener : listeners)
+        if (listener->signature & 0x1u << type) listener->onPutComponent(entity, type);
 }
 
 template<typename T>
