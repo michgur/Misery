@@ -24,10 +24,8 @@ data class AABB(var min: Vec3f, var max: Vec3f)
 
     fun transform(transform: Mat4f) = AABB(transform * min, transform * max)
 
-    infix fun intersects(aabb: AABB) = !(
-            aabb.min.x > max.x || aabb.min.y > max.y || aabb.min.z > max.z ||
-            aabb.max.x > min.x || aabb.max.y > min.y || aabb.max.z > min.z
-    )
+    infix fun intersects(other: AABB) = !(min.x > other.max.x || max.x < other.min.x || min.y > other.max.y ||
+            max.y < other.min.y || min.z > other.max.z || max.z < other.min.z)
 
     operator fun contains(vec3f: Vec3f) =
         vec3f.x <= min.x && vec3f.y <= min.y && vec3f.z <= min.z &&

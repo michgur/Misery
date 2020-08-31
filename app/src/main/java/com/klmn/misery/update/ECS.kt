@@ -7,8 +7,10 @@ import com.klmn.misery.render.Mesh
 import kotlin.reflect.KClass
 import kotlin.reflect.full.safeCast
 
-open class Entity {
+open class Entity(vararg components: Pair<String, Any>) {
     val id: Int = MiseryJNI.createEntity(this)
+
+    init { for (component in components) set(component.first, component.second) }
 
     operator fun <T : Any> get(type: String, cls: KClass<T>): T? = when (type) {
         "transform" -> Transform(MiseryJNI.getTransformComponent(id)) as T?
@@ -31,6 +33,9 @@ open class Entity {
     override fun hashCode() = id
 }
 
-fun system(vararg types: String, apply: (Entity, Float) -> Unit) {
-    MiseryJNI.addSystem(arrayOf(*types), apply)
-}
+fun system(vararg types: String, apply: (Entity, Float) -> Unit) =
+        MiseryJNI.addSystem(arrayOf(*types), apply)
+
+fun interaction(activeTypes: Array<String>, passiveTypes: Array<String>,
+                apply: (Entity, Entity, Float) -> Unit) =
+        MiseryJNI.addInteraction(activeTypes, passiveTypes, apply)

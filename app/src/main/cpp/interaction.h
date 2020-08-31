@@ -17,15 +17,16 @@ struct AABB {
         float data[6];
     };
 
-    inline AABB() {}
+    AABB() {}
+    AABB(vector3f min, vector3f max) : min(min), max(max) {}
 
     inline vector3f getCenter() { return max + min / 2.0f; }
     inline bool intersects(AABB& other) {
-        return !(
-            other.min.x > max.x || other.min.y > max.y || other.min.z > max.z ||
-            other.max.x > min.x || other.max.y > min.y || other.max.z > min.z
-        );
+        return !(min.x > other.max.x || max.x < other.min.x || min.y > other.max.y ||
+                 max.y < other.min.y || min.z > other.max.z || max.z < other.min.z);
     }
+
+    inline AABB transform(matrix4f& matrix) { return AABB(matrix * min, matrix * max); }
 };
 
 struct Interaction {
@@ -56,14 +57,10 @@ class InteractionWorld : public ECSListener {
     std::vector<uint> toUpdate;
     std::vector<Interaction> interactions;
 
-    struct {
+    struct Comparator {
         ECS& ecs;
         int axis = 0;
-        bool operator()(Interactable& a, Interactable& b) {
-            float aMin = ecs.getComponent<AABB>(a.entity, "aabb")->min[axis];
-            float bMin = ecs.getComponent<AABB>(b.entity, "aabb")->min[axis];
-            return aMin < bMin;
-        }
+        bool operator()(Interactable& a, Interactable& b);
     } comparator;
 
     void addEntity(uint entity);

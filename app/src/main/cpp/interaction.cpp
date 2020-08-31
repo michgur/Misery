@@ -11,6 +11,7 @@ InteractionWorld::InteractionWorld(ECS &ecs) : ecs(ecs), comparator{ .ecs = ecs 
     signature = ~0x0u;
     const char* types[] = { "transform", "aabb" };
     interactableSignature = ecs.createSignature(2, types);
+    ecs.addListener(this);
 }
 
 #define MATCHES(a, b) (a & b) == b
@@ -42,7 +43,8 @@ void InteractionWorld::interact(JNIEnv* env, float delta, Interactable& active, 
                         interaction.function->jni.jwrapper,
                         interaction.function->jni.invoke,
                         ecs.getEntity(active.entity).jwrapper,
-                        ecs.getEntity(passive.entity).jwrapper
+                        ecs.getEntity(passive.entity).jwrapper,
+                        delta
                     );
             }
 }
@@ -51,19 +53,25 @@ void InteractionWorld::interact(JNIEnv* env, float delta, Interactable& active, 
 void InteractionWorld::update(JNIEnv* env, float delta) {
     updateEntities();
 
+    for (auto& interactable : interactables) {
+        uint entity = interactable.entity;
+        matrix4f transform = ecs.getComponent<Transform>(entity, "transform")->toMatrix();
+        AABB aabb = ecs.getComponent<AABB>(entity, "aabb")->transform(transform);
+        std::memcpy(ecs.getComponent<AABB>(entity, "_taabb")->data, aabb.data, sizeof(AABB));
+    }
     std::sort(interactables.begin(), interactables.end(), comparator);
 
     vector3f center(0), centerSq(0);
     for (uint i = 0; i < interactables.size(); i++) {
         Interactable& interactable = interactables[i];
-        AABB* aabb = ecs.getComponent<AABB>(interactable.entity, "aabb");
+        AABB* aabb = ecs.getComponent<AABB>(interactable.entity, "_taabb");
         vector3f c = aabb->getCenter();
         center += c;
         centerSq += SQ(c);
 
-        for (uint j = i - 1; j < interactables.size(); j++) {
-            Interactable& other = interactables[i];
-            AABB* otherBB = ecs.getComponent<AABB>(other.entity, "aabb");
+        for (uint j = i + 1; j < interactables.size(); j++) {
+            Interactable& other = interactables[j];
+            AABB* otherBB = ecs.getComponent<AABB>(other.entity, "_taabb");
             if (otherBB->min[comparator.axis] > aabb->max[comparator.axis]) break;
 
             if (aabb->intersects(*otherBB)) {
@@ -83,11 +91,7 @@ void InteractionWorld::update(JNIEnv* env, float delta) {
 #undef SQ
 }
 
-template <typename T>
-void swapRemove(std::vector<T> vector, uint index) {
-    std::swap(vector[index], vector[vector.size() - 1]);
-    vector.pop_back();
-}
+#define SWAP_REMOVE(v, i) std::swap(v[i], v[v.size() - 1]); v.pop_back()
 void InteractionWorld::updateEntities() {
     if (toRemove.empty() && toUpdate.empty()) return;
     for (uint interactable = 0; interactable < interactables.size(); interactable++) {
@@ -96,8 +100,8 @@ void InteractionWorld::updateEntities() {
             removed = false;
             for (uint remove = 0; remove < toRemove.size(); remove++)
                 if (interactables[interactable].entity == toRemove[remove]) {
-                    swapRemove(interactables, interactable);
-                    swapRemove(toRemove, remove);
+                    SWAP_REMOVE(interactables, interactable);
+                    SWAP_REMOVE(toRemove, remove);
                     if (toRemove.empty() && toUpdate.empty()) return;
 
                     removed = true;
@@ -111,11 +115,12 @@ void InteractionWorld::updateEntities() {
                 interactables[interactable].passives.clear();
                 for (uint i = 0; i < interactions.size(); i++)
                     findInteractions(interactables[interactable], i);
-                swapRemove(toUpdate, update);
+                SWAP_REMOVE(toUpdate, update);
             }
     }
     toRemove.clear();
     toUpdate.clear();
+#undef SWAP_REMOVE
 }
 
 void InteractionWorld::addEntity(uint entity) {
@@ -140,7 +145,7 @@ void InteractionWorld::addInteraction(uint activeTypeCount, const char **activeT
     interactions.push_back(Interaction {
             .active_signature = ecs.createSignature(activeTypeCount, activeTypes),
             .passive_signature = ecs.createSignature(passiveTypeCount, passiveTypes),
-            .native = false,
+            .native = true,
             .function = new Interaction::Function { .native = apply }
     });
     for (auto& interactable : interactables)
@@ -160,7 +165,7 @@ void InteractionWorld::addInteraction(JNIEnv *env, jobject &jwrapper, jobjectArr
     interactions.push_back(Interaction {
         .active_signature = active_signature,
         .passive_signature = passive_signature,
-        .native = true,
+        .native = false,
         .function = new Interaction::Function {
             .jni.jwrapper = env->NewGlobalRef(jwrapper),
             .jni.invoke = jinteractioninvoke
@@ -176,4 +181,11 @@ void InteractionWorld::clear(JNIEnv *env) {
             env->DeleteGlobalRef(interaction.function->jni.jwrapper);
         delete interaction.function;
     }
+}
+
+bool InteractionWorld::Comparator::operator()(InteractionWorld::Interactable &a,
+                                              InteractionWorld::Interactable &b) {
+    float aMin = ecs.getComponent<AABB>(a.entity, "_taabb")->min[axis];
+    float bMin = ecs.getComponent<AABB>(b.entity, "_taabb")->min[axis];
+    return aMin < bMin;
 }

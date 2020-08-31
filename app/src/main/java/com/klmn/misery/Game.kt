@@ -7,10 +7,7 @@ import com.klmn.misery.render.Material
 import com.klmn.misery.render.Mesh
 import com.klmn.misery.render.Shader
 import com.klmn.misery.render.Texture
-import com.klmn.misery.update.Entity
-import com.klmn.misery.update.TouchControls
-import com.klmn.misery.update.Transform
-import com.klmn.misery.update.system
+import com.klmn.misery.update.*
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -40,50 +37,62 @@ class PigGame(activity: Activity) : Game(activity)
                 scale = Vec3f(0.05f),
                 rotation = Quaternion.rotation(Vec3f.RIGHT, 0.5f)
         )
-        val pigs = mutableListOf<Entity>()
-        for (i in 0..5) {
-            val pig = Entity()
-            pigs.add(pig)
-            pig["mesh"] = mesh
-            pig["material"] = material
-            pig["transform"] = transform.copy(translation = Vec3f(
-                    Random.nextFloat() * 10f - 5f,
-                    Random.nextFloat() * 10f - 5f,
-                    -Random.nextFloat() * 30f - 10f
-            ))
-            var touchID = -1
-            var touchPos: Vec2f? = null
-            val movementControl = TouchControls(
-                    MotionEvent.ACTION_DOWN to { event ->
-                        touchPos = Vec2f(event.x, event.y)
-                        touchID = event.getPointerId(0)
-                    },
-                    MotionEvent.ACTION_MOVE to { event ->
-                        if (touchPos != null && event.findPointerIndex(touchID) >= 0) {
-                            val newPos = Vec2f(
-                                    event.getX(event.findPointerIndex(touchID)),
-                                    event.getY(event.findPointerIndex(touchID))
-                            )
-                            val pigTransform = this["transform", Transform::class]!!
-                            pigTransform.translation += Vec3f(
-                                    (touchPos!!.x - newPos.x) * 0.02f,
-                                    0f,
-                                    (touchPos!!.y - newPos.y) * -0.01f
-                            )
-                            fun clamp(value: Float, bottom: Float, top: Float) = min(top, max(bottom, value))
-                            pigTransform.translation =
-                                    Vec3f(
-                                            clamp(pigTransform.translation.x, -15f, 15f),
-                                            pigTransform.translation.y,
-                                            clamp(pigTransform.translation.z, -40f, 2f)
-                                    )
+        val aabb = AABB(Vec3f(-500f), Vec3f(500f));
 
-                            touchPos = newPos
+        var touchID = -1
+        var touchPos: Vec2f? = null
+        fun createEntity() = Entity(
+                "mesh" to mesh,
+                "material" to material,
+                "transform" to transform.copy(translation = Vec3f(
+                        Random.nextFloat() * 10f - 5f,
+                        Random.nextFloat() * 10f - 5f,
+                        -20f
+                )),
+                "aabb" to aabb,
+                "temp" to 0
+        )
+        createEntity()
+        createEntity()
+        Entity(
+                "mesh" to mesh,
+                "material" to material,
+                "transform" to transform.copy(translation = Vec3f(
+                        Random.nextFloat() * 10f - 5f,
+                        Random.nextFloat() * 10f - 5f,
+                        -20f
+                )),
+                "movementControl" to TouchControls(
+                        MotionEvent.ACTION_DOWN to { event ->
+                            touchPos = Vec2f(event.x, event.y)
+                            touchID = event.getPointerId(0)
+                        },
+                        MotionEvent.ACTION_MOVE to { event ->
+                            if (touchPos != null && event.findPointerIndex(touchID) >= 0) {
+                                val newPos = Vec2f(
+                                        event.getX(event.findPointerIndex(touchID)),
+                                        event.getY(event.findPointerIndex(touchID))
+                                )
+                                val pigTransform = this["transform", Transform::class]!!
+                                pigTransform.translation += Vec3f(
+                                        (touchPos!!.x - newPos.x) * 0.02f,
+                                        (touchPos!!.y - newPos.y) * 0.01f,
+                                        0f
+                                )
+                                fun clamp(value: Float, bottom: Float, top: Float) = min(top, max(bottom, value))
+                                pigTransform.translation =
+                                        Vec3f(
+                                                clamp(pigTransform.translation.x, -15f, 15f),
+                                                pigTransform.translation.y,
+                                                clamp(pigTransform.translation.z, -40f, 2f)
+                                        )
+
+                                touchPos = newPos
+                            }
                         }
-                    }
-            )
-            pig["movementControl"] = movementControl
-        }
+                ),
+                "aabb" to aabb
+        )
 
         val velocity = 0.1f
         system("transform") { entity, delta ->
@@ -94,14 +103,10 @@ class PigGame(activity: Activity) : Game(activity)
             inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }
         }
 
-        var count = 0f
-        system("diffuse") { _, delta ->
-            if (pigs.isEmpty()) return@system
-            count += delta
-            if (count > 3f) {
-                count = 0f
-                pigs.removeLast().destroy()
-            }
+        interaction(arrayOf("movementControl"), arrayOf("temp")) { a, b, _ ->
+            println("omfg")
+            b.destroy()
+            createEntity()
         }
     }
 }

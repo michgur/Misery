@@ -18,7 +18,7 @@ object MiseryJNI
 
     external fun addSystem(types: Array<String>, apply: (Entity, Float) -> Unit)
     external fun addInteraction(activeTypes: Array<String>, passiveTypes: Array<String>,
-                                apply: (Entity, Float) -> Unit)
+                                apply: (Entity, Entity, Float) -> Unit)
     external fun createEntity(wrapper: Entity): Int
     external fun removeEntity(entity: Int)
 

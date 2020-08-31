@@ -189,6 +189,7 @@ Java_com_klmn_misery_MiseryJNI_setAABBComponent(JNIEnv *env, jobject thiz, jint 
     AABB component;
     env->GetFloatArrayRegion(aabb, 0, 6, component.data);
     Misery::ecs.putComponent(entity, "aabb", component);
+    Misery::ecs.putComponent(entity, "_taabb", component);
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_addInteraction(JNIEnv *env, jobject thiz, jobjectArray active_types,
