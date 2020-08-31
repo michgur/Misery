@@ -31,7 +31,15 @@ struct AABB {
 struct Interaction {
     uint64_t active_signature;
     uint64_t passive_signature;
-    virtual void apply(uint active, uint passive, float delta) {}
+
+    bool native;
+    union Function {
+        struct {
+            jobject jwrapper;
+            jmethodID invoke;
+        } jni;
+        void (*native)(uint active, uint passive, float delta);
+    } *function;
 };
 
 class InteractionWorld : public ECSListener {
@@ -46,7 +54,7 @@ class InteractionWorld : public ECSListener {
     std::vector<Interactable> interactables;
     std::vector<uint> toRemove;
     std::vector<uint> toUpdate;
-    std::vector<Interaction*> interactions;
+    std::vector<Interaction> interactions;
 
     struct {
         ECS& ecs;
@@ -60,17 +68,23 @@ class InteractionWorld : public ECSListener {
 
     void addEntity(uint entity);
     void findInteractions(Interactable& interactable, uint index);
+    void interact(JNIEnv* env, float delta, Interactable& active, Interactable& passive);
     void updateEntities();
 public:
     InteractionWorld(ECS& ecs);
 
-    inline void addInteraction(Interaction* interaction);
+    void addInteraction(uint activeTypeCount, const char* activeTypes[],
+            uint passiveTypeCount, const char* passiveTypes[], void (*apply)(uint, uint, float));
+    void addInteraction(JNIEnv* env, jobject& jwrapper,
+            jobjectArray& activeTypes, jobjectArray& passiveTypes);
 
     void onPutComponent(uint entity, uint type);
     void onRemoveComponent(uint entity, uint type);
 
-    void update(float delta);
+    void update(JNIEnv* env, float delta);
+    void clear(JNIEnv* env);
 };
 
+namespace Misery { extern InteractionWorld interactions; }
 
 #endif //MISERY_INTERACTION_H

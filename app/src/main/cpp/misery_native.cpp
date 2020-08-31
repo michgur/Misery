@@ -27,7 +27,7 @@ Java_com_klmn_misery_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz,
     Misery::assetManager = AAssetManager_fromJava(env, asset_manager);
 
     const char* types[] = { "transform", "mesh", "material" };
-    Misery::ecs.addNativeSystem(Misery::renderContext.render, 3, types);
+    Misery::ecs.addSystem(Misery::renderContext.render, 3, types);
 }
 
 
@@ -89,14 +89,17 @@ JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_addSystem(JNIEnv *env, jobject thiz, jobjectArray types,
                                          jobject apply) {
     Misery::ecs.addSystem(env, apply, types);
-}extern "C"
+}
+extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_updateECS(JNIEnv *env, jobject thiz, jfloat delta) {
     Misery::ecs.update(env, delta);
+    Misery::interactions.update(env, delta);
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_clearECS(JNIEnv *env, jobject thiz) {
     Misery::ecs.clear(env);
+    Misery::interactions.clear(env);
 }
 
 extern "C"
@@ -186,4 +189,9 @@ Java_com_klmn_misery_MiseryJNI_setAABBComponent(JNIEnv *env, jobject thiz, jint 
     AABB component;
     env->GetFloatArrayRegion(aabb, 0, 6, component.data);
     Misery::ecs.putComponent(entity, "aabb", component);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_addInteraction(JNIEnv *env, jobject thiz, jobjectArray active_types,
+                                              jobjectArray passive_types, jobject apply) {
+    Misery::interactions.addInteraction(env, apply, active_types, passive_types);
 }

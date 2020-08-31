@@ -37,11 +37,7 @@ uint64_t ECS::createSignature(int typeCount, const char* reqTypes[]) {
         signature |= 0x1u << getTypeID(reqTypes[i]);
     return signature;
 }
-
-void ECS::addNativeSystem(void (*apply)(uint, float), int typeCount, const char* reqTypes[])
-{ nativeSystems.push_back(NativeSystem {createSignature(typeCount, reqTypes), apply });}
-
-void ECS::addSystem(JNIEnv* env, jobject &jwrapper, jobjectArray &reqTypes) {
+uint64_t ECS::createSignature(JNIEnv* env, jobjectArray &reqTypes) {
     uint64_t signature = 0;
     uint typeCount = env->GetArrayLength(reqTypes);
     for (uint i = 0; i < typeCount; i++) {
@@ -52,9 +48,16 @@ void ECS::addSystem(JNIEnv* env, jobject &jwrapper, jobjectArray &reqTypes) {
 
         env->ReleaseStringUTFChars(typeString, typeChars);
     }
+    return signature;
+}
+
+void ECS::addSystem(void (*apply)(uint, float), int typeCount, const char **reqTypes)
+{ nativeSystems.push_back(NativeSystem {createSignature(typeCount, reqTypes), apply });}
+
+void ECS::addSystem(JNIEnv* env, jobject &jwrapper, jobjectArray &reqTypes) {
     jclass jsystemclass = env->GetObjectClass(jwrapper);
     jmethodID jsysteminvoke = env->GetMethodID(jsystemclass, "invoke", "(Lcom/klmn/misery/update/Entity;F)V");
-    systems.push_back(System { signature, env->NewGlobalRef(jwrapper), jsysteminvoke });
+    systems.push_back(System { createSignature(env, reqTypes), env->NewGlobalRef(jwrapper), jsysteminvoke });
 }
 
 #define MATCHES(s, e) (s.signature & e.signature) == s.signature
@@ -135,7 +138,7 @@ void ECS::removeEntity(JNIEnv *env, uint entity) {
     entities.pop_back();
 }
 
-void ECS::removeNativeSystem(void (*apply)(uint, float)) {
+void ECS::removeSystem(void (*apply)(uint, float)) {
     for (uint i = 0; i < nativeSystems.size(); i++)
         if (nativeSystems[i].apply == apply) {
             nativeSystems.erase(nativeSystems.begin() + i);

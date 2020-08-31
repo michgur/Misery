@@ -62,6 +62,7 @@ class ECS {
     std::vector<ECSListener*> listeners;
 public:
     uint64_t createSignature(int typeCount, const char* reqTypes[]);
+    uint64_t createSignature(JNIEnv* env, jobjectArray& reqTypes);
 
     uint newEntity(jobject jwrapper);
     Entity& getEntity(uint entity);
@@ -79,8 +80,8 @@ public:
     void removeComponent(uint entity, const char* type);
     bool hasComponent(uint entity, const char* type);
     bool hasComponent(uint entity, uint type);
-    void addNativeSystem(void (*apply)(uint, float), int typeCount, const char* reqTypes[]);
-    void removeNativeSystem(void (*apply)(uint, float));
+    void addSystem(void (*apply)(uint, float), int typeCount, const char **reqTypes);
+    void removeSystem(void (*apply)(uint, float));
     void addSystem(JNIEnv* env, jobject& jwrapper, jobjectArray& reqTypes);
     void removeSystem(JNIEnv* env, jobject& jwrapper);
     inline void addListener(ECSListener* listener) { listeners.push_back(listener); }

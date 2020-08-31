@@ -5,6 +5,8 @@
 #include "interaction.h"
 #include <algorithm>
 
+namespace Misery { InteractionWorld interactions(ecs); }
+
 InteractionWorld::InteractionWorld(ECS &ecs) : ecs(ecs), comparator{ .ecs = ecs } {
     signature = ~0x0u;
     const char* types[] = { "transform", "aabb" };
@@ -29,36 +31,44 @@ void InteractionWorld::onRemoveComponent(uint entity, uint type) {
     else toUpdate.push_back(entity);
 }
 
+void InteractionWorld::interact(JNIEnv* env, float delta, Interactable& active, Interactable& passive) {
+    for (auto& activeInteraction : active.actives)
+        for (auto& passiveInteraction : passive.passives)
+            if (activeInteraction == passiveInteraction) {
+                Interaction& interaction = interactions[activeInteraction];
+                if (interaction.native)
+                    interaction.function->native(active.entity, passive.entity, delta);
+                else env->CallVoidMethod(
+                        interaction.function->jni.jwrapper,
+                        interaction.function->jni.invoke,
+                        ecs.getEntity(active.entity).jwrapper,
+                        ecs.getEntity(passive.entity).jwrapper
+                    );
+            }
+}
+
 #define SQ(v) vector3f(v.x * v.x, v.y * v.y, v.z * v.z)
-void InteractionWorld::update(float delta) {
+void InteractionWorld::update(JNIEnv* env, float delta) {
     updateEntities();
 
     std::sort(interactables.begin(), interactables.end(), comparator);
 
     vector3f center(0), centerSq(0);
-    for (uint interactable = 0; interactable < interactables.size(); interactable++) {
-        AABB* aabb = ecs.getComponent<AABB>(interactables[interactable].entity, "aabb");
+    for (uint i = 0; i < interactables.size(); i++) {
+        Interactable& interactable = interactables[i];
+        AABB* aabb = ecs.getComponent<AABB>(interactable.entity, "aabb");
         vector3f c = aabb->getCenter();
         center += c;
         centerSq += SQ(c);
 
-        for (uint other = interactable - 1; other < interactables.size(); other++) {
-            AABB* otherBB = ecs.getComponent<AABB>(interactables[other].entity, "aabb");
+        for (uint j = i - 1; j < interactables.size(); j++) {
+            Interactable& other = interactables[i];
+            AABB* otherBB = ecs.getComponent<AABB>(other.entity, "aabb");
             if (otherBB->min[comparator.axis] > aabb->max[comparator.axis]) break;
 
             if (aabb->intersects(*otherBB)) {
-                for (auto& active : interactables[interactable].actives)
-                    for (auto& passive : interactables[other].passives)
-                        if (active == passive) {
-                            Interaction* interaction = interactions[interactables[interactable].actives[active]];
-                            interaction->apply(interactable, other, delta);
-                        }
-                for (auto& passive : interactables[interactable].passives)
-                    for (auto& active : interactables[other].actives)
-                        if (active == passive) {
-                            Interaction* interaction = interactions[interactables[interactable].passives[passive]];
-                            interaction->apply(interactable, other, delta);
-                        }
+                interact(env, delta, interactable, other);
+                interact(env, delta, other, interactable);
             }
         }
     }
@@ -116,17 +126,54 @@ void InteractionWorld::addEntity(uint entity) {
 
 void InteractionWorld::findInteractions
 (InteractionWorld::Interactable &interactable, uint index) {
-    Interaction* interaction = interactions[index];
+    Interaction& interaction = interactions[index];
     uint64_t signature = ecs.getEntity(interactable.entity).signature;
-    if (MATCHES(signature, interaction->active_signature))
+    if (MATCHES(signature, interaction.active_signature))
         interactable.actives.push_back(index);
-    if (MATCHES(signature, interaction->passive_signature))
+    if (MATCHES(signature, interaction.passive_signature))
         interactable.passives.push_back(index);
 }
 
-void InteractionWorld::addInteraction(Interaction *interaction) {
+void InteractionWorld::addInteraction(uint activeTypeCount, const char **activeTypes,
+              uint passiveTypeCount, const char **passiveTypes, void (*apply)(uint, uint, float)) {
     uint index = interactions.size();
-    interactions.push_back(interaction);
+    interactions.push_back(Interaction {
+            .active_signature = ecs.createSignature(activeTypeCount, activeTypes),
+            .passive_signature = ecs.createSignature(passiveTypeCount, passiveTypes),
+            .native = false,
+            .function = new Interaction::Function { .native = apply }
+    });
     for (auto& interactable : interactables)
         findInteractions(interactable, index);
+}
+
+void InteractionWorld::addInteraction(JNIEnv *env, jobject &jwrapper, jobjectArray &activeTypes,
+                                      jobjectArray &passiveTypes) {
+    uint64_t active_signature = ecs.createSignature(env, activeTypes);
+    uint64_t passive_signature = ecs.createSignature(env, passiveTypes);
+
+    jclass jinteractionclass = env->GetObjectClass(jwrapper);
+    jmethodID jinteractioninvoke = env->GetMethodID(jinteractionclass,
+            "invoke", "(Lcom/klmn/misery/update/Entity;Lcom/klmn/misery/update/Entity;F)V");
+
+    uint index = interactions.size();
+    interactions.push_back(Interaction {
+        .active_signature = active_signature,
+        .passive_signature = passive_signature,
+        .native = true,
+        .function = new Interaction::Function {
+            .jni.jwrapper = env->NewGlobalRef(jwrapper),
+            .jni.invoke = jinteractioninvoke
+        }
+    });
+    for (auto& interactable : interactables)
+        findInteractions(interactable, index);
+}
+
+void InteractionWorld::clear(JNIEnv *env) {
+    for (auto& interaction : interactions) {
+        if (interaction.native)
+            env->DeleteGlobalRef(interaction.function->jni.jwrapper);
+        delete interaction.function;
+    }
 }
