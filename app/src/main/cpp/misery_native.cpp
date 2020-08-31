@@ -17,6 +17,7 @@
 #include "Transform.h"
 #include "assets.h"
 #include "RenderContext.h"
+#include "interaction.h"
 
 
 extern "C"
@@ -155,7 +156,8 @@ JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_putLongComponent(JNIEnv *env, jobject thiz, jint entity,
                                                 jstring type, jlong value) {
     const char* typeChars = env->GetStringUTFChars(type, nullptr);
-    Misery::ecs.putComponent<long>(entity, typeChars, value);
+    long ref = value;
+    Misery::ecs.putComponent<long>(entity, typeChars, ref);
     env->ReleaseStringUTFChars(type, typeChars);
 }extern "C"
 JNIEXPORT void JNICALL
@@ -177,4 +179,11 @@ Java_com_klmn_misery_MiseryJNI_removeComponent(JNIEnv *env, jobject thiz, jint e
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_removeEntity(JNIEnv *env, jobject thiz, jint entity) {
     Misery::ecs.removeEntity(env, entity);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_MiseryJNI_setAABBComponent(JNIEnv *env, jobject thiz, jint entity,
+                                                jfloatArray aabb) {
+    AABB component;
+    env->GetFloatArrayRegion(aabb, 0, 6, component.data);
+    Misery::ecs.putComponent(entity, "aabb", component);
 }

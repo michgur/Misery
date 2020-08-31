@@ -1,6 +1,7 @@
 package com.klmn.misery.update
 
 import com.klmn.misery.MiseryJNI
+import com.klmn.misery.math.AABB
 import com.klmn.misery.render.Material
 import com.klmn.misery.render.Mesh
 import kotlin.reflect.KClass
@@ -18,6 +19,7 @@ open class Entity {
         Int::class -> MiseryJNI.putIntComponent(id, type, value as Int)
         Long::class -> MiseryJNI.putLongComponent(id, type, value as Long)
         Transform::class -> MiseryJNI.setTransformComponent(id, (value as Transform).toFloatArray())
+        AABB::class -> MiseryJNI.setAABBComponent(id, (value as AABB).toFloatArray())
         Material::class -> MiseryJNI.setMaterialComponent(id, (value as Material).data.id)
         Mesh::class -> MiseryJNI.putLongComponent(id, type, (value as Mesh).pointer)
         else -> MiseryJNI.putComponent(id, type, value);

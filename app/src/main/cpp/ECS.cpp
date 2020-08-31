@@ -38,7 +38,7 @@ uint64_t ECS::createSignature(int typeCount, const char* reqTypes[]) {
     return signature;
 }
 
-void ECS::addNativeSystem(void (*apply)(Entity&, float), int typeCount, const char* reqTypes[])
+void ECS::addNativeSystem(void (*apply)(uint, float), int typeCount, const char* reqTypes[])
 { nativeSystems.push_back(NativeSystem {createSignature(typeCount, reqTypes), apply });}
 
 void ECS::addSystem(JNIEnv* env, jobject &jwrapper, jobjectArray &reqTypes) {
@@ -61,7 +61,7 @@ void ECS::addSystem(JNIEnv* env, jobject &jwrapper, jobjectArray &reqTypes) {
 void ECS::update(JNIEnv* env, jfloat delta) {
     for (auto & system : nativeSystems) {
         for (auto & entity : entities)
-            if (MATCHES(system, entity)) system.apply(entity, delta);
+            if (MATCHES(system, entity)) system.apply(entity.id, delta);
     }
     for (auto& system : systems) {
         for (auto& entity : entities)
@@ -135,7 +135,7 @@ void ECS::removeEntity(JNIEnv *env, uint entity) {
     entities.pop_back();
 }
 
-void ECS::removeNativeSystem(void (*apply)(Entity &, float)) {
+void ECS::removeNativeSystem(void (*apply)(uint, float)) {
     for (uint i = 0; i < nativeSystems.size(); i++)
         if (nativeSystems[i].apply == apply) {
             nativeSystems.erase(nativeSystems.begin() + i);
@@ -152,4 +152,9 @@ void ECS::removeSystem(JNIEnv *env, jobject &jwrapper) {
             break;
         }
     }
+}
+
+bool ECS::hasComponent(uint entity, const char *type) { return hasComponent(entity, getTypeID(type)); }
+bool ECS::hasComponent(uint entity, uint type) {
+    return entities[entity].signature & 0x1u << type;
 }

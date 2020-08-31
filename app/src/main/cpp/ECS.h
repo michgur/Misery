@@ -43,14 +43,14 @@ struct System {
 };
 struct NativeSystem {
     uint64_t signature;
-    void (*apply)(Entity&, float);
+    void (*apply)(uint, float);
 };
 
 struct ECSListener {
     uint64_t signature;
 
-    virtual void onPutComponent(uint entity, uint type);
-    virtual void onRemoveComponent(uint entity, uint type);
+    virtual void onPutComponent(uint entity, uint type) {}
+    virtual void onRemoveComponent(uint entity, uint type) {}
 };
 
 class ECS {
@@ -60,9 +60,9 @@ class ECS {
     std::vector<System> systems;
     std::vector<NativeSystem> nativeSystems;
     std::vector<ECSListener*> listeners;
-
-    uint64_t createSignature(int typeCount, const char* reqTypes[]);
 public:
+    uint64_t createSignature(int typeCount, const char* reqTypes[]);
+
     uint newEntity(jobject jwrapper);
     Entity& getEntity(uint entity);
     void removeEntity(JNIEnv* env, uint entity);
@@ -77,8 +77,10 @@ public:
     T* getComponent(uint entity, const char* type);
     void removeComponent(uint entity, uint type);
     void removeComponent(uint entity, const char* type);
-    void addNativeSystem(void (*apply)(Entity&, float), int typeCount, const char* reqTypes[]);
-    void removeNativeSystem(void (*apply)(Entity&, float));
+    bool hasComponent(uint entity, const char* type);
+    bool hasComponent(uint entity, uint type);
+    void addNativeSystem(void (*apply)(uint, float), int typeCount, const char* reqTypes[]);
+    void removeNativeSystem(void (*apply)(uint, float));
     void addSystem(JNIEnv* env, jobject& jwrapper, jobjectArray& reqTypes);
     void removeSystem(JNIEnv* env, jobject& jwrapper);
     inline void addListener(ECSListener* listener) { listeners.push_back(listener); }

@@ -33,4 +33,6 @@ data class AABB(var min: Vec3f, var max: Vec3f)
         vec3f.x <= min.x && vec3f.y <= min.y && vec3f.z <= min.z &&
         vec3f.x <= max.x && vec3f.y <= max.y && vec3f.z <= max.z
     operator fun contains(aabb: AABB) = contains(aabb.min) && contains(aabb.max)
+
+    fun toFloatArray() = floatArrayOf(*min.toFloatArray(), *max.toFloatArray())
 }

@@ -27,14 +27,15 @@ object MiseryJNI
     external fun removeComponent(entity: Int, type: String)
     external fun getTransformComponent(entity: Int): Long
     external fun setTransformComponent(entity: Int, f: FloatArray)
+    external fun setAABBComponent(entity: Int, aabb: FloatArray)
     external fun setMaterialComponent(entity: Int, material: Int)
-    external fun getMaterialComponent(entity: Int): Entity
 
+    external fun getMaterialComponent(entity: Int): Entity
     external fun getFloat(pointer: Long, offset: Int): Float
     external fun setFloat(pointer: Long, f: Float, offset: Int)
     external fun getFloats(pointer: Long, count: Int, offset: Int): FloatArray
-    external fun setFloats(pointer: Long, f: FloatArray, offset: Int)
 
+    external fun setFloats(pointer: Long, f: FloatArray, offset: Int)
     external fun getCameraTransform(): Long
     external fun setViewSize(width: Int, height: Int)
 }
