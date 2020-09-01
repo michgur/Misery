@@ -189,3 +189,17 @@ bool InteractionWorld::Comparator::operator()(InteractionWorld::Interactable &a,
     float bMin = ecs.getComponent<AABB>(b.entity, "_taabb")->min[axis];
     return aMin < bMin;
 }
+
+AABB AABB::transform(matrix4f &matrix) {
+    vector3f center(getCenter());
+    vector3f extents(getExtents());
+
+    vector3f absExtents(std::abs(extents.x), std::abs(extents.y), std::abs(extents.z));
+    matrix4f absMatrix(matrix);
+    float* f = absMatrix[0];
+    for(uint i = 0; i < 4; i++) { f[i] = std::abs(f[i]); }
+
+    center = matrix * center;
+    extents = absMatrix * absExtents;
+    return { center - extents, center + extents };
+}

@@ -103,6 +103,10 @@ class PigGame(activity: Activity) : Game(activity)
             inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }
         }
 
+        system("_taabb") { entity, _ ->
+
+        }
+
         interaction(arrayOf("movementControl"), arrayOf("temp")) { a, b, _ ->
             println("omfg")
             b.destroy()
