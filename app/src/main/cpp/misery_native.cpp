@@ -195,4 +195,12 @@ JNIEXPORT void JNICALL
 Java_com_klmn_misery_MiseryJNI_addInteraction(JNIEnv *env, jobject thiz, jobjectArray active_types,
                                               jobjectArray passive_types, jobject apply) {
     Misery::interactions.addInteraction(env, apply, active_types, passive_types);
+}extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_klmn_misery_MiseryJNI_getComponentPointer(JNIEnv *env, jobject thiz, jint entity,
+                                                   jstring type) {
+    const char* typeChars = env->GetStringUTFChars(type, nullptr);
+    void* result = Misery::ecs.getComponent<void>(entity, typeChars);
+    env->ReleaseStringUTFChars(type, typeChars);
+    return (long) result;
 }

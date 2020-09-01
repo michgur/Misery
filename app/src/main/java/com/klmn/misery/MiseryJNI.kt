@@ -27,6 +27,7 @@ object MiseryJNI
     external fun putLongComponent(entity: Int, type: String, value: Long)
     external fun getComponent(entity: Int, type: String): Any
     external fun removeComponent(entity: Int, type: String)
+    external fun getComponentPointer(entity: Int, type: String): Long
     external fun getTransformComponent(entity: Int): Long
     external fun setTransformComponent(entity: Int, f: FloatArray)
     external fun setAABBComponent(entity: Int, aabb: FloatArray)

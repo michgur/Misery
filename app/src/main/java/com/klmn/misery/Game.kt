@@ -1,6 +1,7 @@
 package com.klmn.misery
 
 import android.app.Activity
+import android.opengl.GLES30.*
 import android.view.MotionEvent
 import com.klmn.misery.math.*
 import com.klmn.misery.render.Material
@@ -8,6 +9,7 @@ import com.klmn.misery.render.Mesh
 import com.klmn.misery.render.Shader
 import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
+import java.nio.FloatBuffer
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -26,7 +28,11 @@ open class Game(val activity: Activity)
 
 class PigGame(activity: Activity) : Game(activity)
 {
-    override fun onViewChanged(width: Int, height: Int) { MiseryJNI.setViewSize(width, height) }
+    private var projection = Mat4f()
+    override fun onViewChanged(width: Int, height: Int) {
+        MiseryJNI.setViewSize(width, height)
+        projection = Mat4f.perspective(90f, width.toFloat(), height.toFloat(), 0.1f, 1000f)
+    }
 
     override fun init() {
         val mesh = Mesh("pig.obj")
@@ -103,14 +109,64 @@ class PigGame(activity: Activity) : Game(activity)
             inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }
         }
 
-        system("_taabb") { entity, _ ->
+        val lineSeg = floatArrayOf(
+                -500.0f, -500.0f, -500f,
+                -500.0f, -500.0f, 500f,
+                -500.0f, 500.0f, 500f,
+                -500.0f, 500.0f, -500f,
+                500.0f, 500.0f, -500f,
+                500.0f, -500.0f, 500f,
+                500.0f, -500.0f, -500f,
+                500.0f, 500.0f, 500f
+        )
 
-        }
+        createBBRenderer()
 
         interaction(arrayOf("movementControl"), arrayOf("temp")) { a, b, _ ->
             println("omfg")
             b.destroy()
             createEntity()
+        }
+    }
+
+    fun createBBRenderer() {
+        val vertices = floatArrayOf(
+                1f, 1f, 1f, 1f, 1f, -1f,
+                -1f, 1f, 1f, -1f, 1f, -1f,
+                1f, -1f, 1f, 1f, -1f, -1f,
+                -1f, -1f, 1f, -1f, -1f, -1f,
+                1f, 1f, 1f, 1f, -1f, 1f,
+                1f, 1f, -1f, 1f, -1f, -1f,
+                -1f, 1f, 1f, -1f, -1f, 1f,
+                -1f, 1f, -1f, -1f, -1f, -1f,
+                1f, 1f, 1f, -1f, 1f, 1f,
+                1f, 1f, -1f, -1f, 1f, -1f,
+                1f, -1f, 1f, -1f, -1f, 1f,
+                1f, -1f, -1f, -1f, -1f, -1f
+        )
+        val buffers = intArrayOf(0, 0)
+        glGenVertexArrays(1, buffers, 0)
+        glGenBuffers(1, buffers, 1)
+        glBindVertexArray(buffers[0])
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[1])
+        glBufferData(GL_ARRAY_BUFFER, 4 * vertices.size, FloatBuffer.wrap(vertices), GL_STATIC_DRAW)
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 12, 0)
+        val bbShader = Shader("vertex_bb.glsl", "fragment_bb.glsl")
+
+        system("transform", "_taabb") { entity, _ ->
+            bbShader.bind()
+            val mvp = entity["transform", Transform::class]!!.matrix
+            val floats = MiseryJNI.getFloats(entity["_taabb", Long::class]!!, 6, 0)
+            mvp[0, 0] *= (floats[3] - floats[0]) / 2f
+            mvp[1, 1] *= (floats[4] - floats[1]) / 2f
+            mvp[2, 2] *= (floats[5] - floats[2]) / 2f
+            bbShader.loadUniform("mvp", projection * mvp)
+            glBindVertexArray(buffers[0])
+            glLineWidth(3.3f)
+            glClear(GL_DEPTH_BUFFER_BIT)
+            glDrawArrays(GL_LINES, 0, 24)
+            glLineWidth(1.0f)
         }
     }
 }

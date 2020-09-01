@@ -12,9 +12,10 @@ open class Entity(vararg components: Pair<String, Any>) {
 
     init { for (component in components) set(component.first, component.second) }
 
-    operator fun <T : Any> get(type: String, cls: KClass<T>): T? = when (type) {
-        "transform" -> Transform(MiseryJNI.getTransformComponent(id)) as T?
-        "material" -> Material(MiseryJNI.getMaterialComponent(id)) as T?
+    operator fun <T : Any> get(type: String, cls: KClass<T>): T? = when (cls) {
+        Transform::class -> Transform(MiseryJNI.getTransformComponent(id)) as T?
+        Material::class -> Material(MiseryJNI.getMaterialComponent(id)) as T?
+        Long::class -> MiseryJNI.getComponentPointer(id, type) as T?
         else -> cls.safeCast(MiseryJNI.getComponent(id, type))
     }
     operator fun set(type: String, value: Any) = when(value::class) {
