@@ -1,35 +1,24 @@
 package com.klmn.misery.update
 
-import com.klmn.misery.MiseryJNI
+import com.klmn.misery.jni.MiseryJNI
+import com.klmn.misery.jni.NativeComponent
+import com.klmn.misery.jni.NativeQuaternionDelegate
+import com.klmn.misery.jni.NativeVec3fDelegate
 import com.klmn.misery.math.Mat4f
 import com.klmn.misery.math.Quaternion
 import com.klmn.misery.math.Vec3f
 
-class Transform {
-    private var native: Boolean
-    var pointer: Long
-
-    constructor(pointer: Long) {
-        this.pointer = pointer
-        this.native = true
-    }
+class Transform : NativeComponent {
+    constructor(pointer: Long) : super(pointer)
     constructor(translation: Vec3f = Vec3f(), rotation: Quaternion = Quaternion(), scale: Vec3f = Vec3f(1f)) {
-        this.pointer = 0
-        this.native = false
         this.translation = translation
         this.rotation = rotation
         this.scale = scale
     }
 
-    var translation = Vec3f()
-        get() = if (native) Vec3f(MiseryJNI.getFloats(pointer, 3, 0)) else field
-        set(value) = if (native) MiseryJNI.setFloats(pointer, value.toFloatArray(), 0) else field = value
-    var rotation = Quaternion()
-        get() = if (native) Quaternion(MiseryJNI.getFloats(pointer, 4, 3)) else field
-        set(value) = if (native) MiseryJNI.setFloats(pointer, value.toFloatArray(), 3) else field = value
-    var scale = Vec3f(1f)
-        get() = if (native) Vec3f(MiseryJNI.getFloats(pointer, 3, 7)) else field
-        set(value) = if (native) MiseryJNI.setFloats(pointer, value.toFloatArray(), 7) else field = value
+    var translation: Vec3f by NativeVec3fDelegate(0)
+    var rotation: Quaternion by NativeQuaternionDelegate(3)
+    var scale: Vec3f by NativeVec3fDelegate(7)
 
     fun toFloatArray() =
         if (native) MiseryJNI.getFloats(pointer, 10, 0)

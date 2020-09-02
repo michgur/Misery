@@ -1,4 +1,4 @@
-package com.klmn.misery
+package com.klmn.misery.jni
 
 import android.content.res.AssetManager
 import com.klmn.misery.update.Entity

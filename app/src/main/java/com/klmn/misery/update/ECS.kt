@@ -1,7 +1,6 @@
 package com.klmn.misery.update
 
-import com.klmn.misery.MiseryJNI
-import com.klmn.misery.math.AABB
+import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.render.Material
 import com.klmn.misery.render.Mesh
 import kotlin.reflect.KClass

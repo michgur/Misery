@@ -2,6 +2,7 @@ package com.klmn.misery
 
 import android.app.Activity
 import android.os.Bundle
+import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.render.MiseryView
 
 /**

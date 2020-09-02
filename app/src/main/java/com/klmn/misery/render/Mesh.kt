@@ -1,6 +1,6 @@
 package com.klmn.misery.render
 
-import com.klmn.misery.MiseryJNI
+import com.klmn.misery.jni.MiseryJNI
 
 class Mesh(path: String)
 {

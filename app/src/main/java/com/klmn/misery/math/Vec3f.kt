@@ -10,6 +10,8 @@ data class Vec3f(var x: Float, var y: Float, var z: Float)
 {
     constructor(f: Float = 0f) : this(f, f, f)
     constructor(f: FloatArray) : this(f[0], f[1], f[2])
+    constructor(v: Vec2f, f: Float) : this(v.x, v.y, f)
+    constructor(f: Float, v: Vec2f) : this(f, v.x, v.y)
 
     operator fun get(index: Int) = when (index) {
         0 -> x

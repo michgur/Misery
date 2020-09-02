@@ -1,6 +1,6 @@
 package com.klmn.misery.math
 
-import com.klmn.misery.MiseryJNI
+import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.update.Transform
 
 /**

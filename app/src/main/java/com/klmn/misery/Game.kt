@@ -3,6 +3,7 @@ package com.klmn.misery
 import android.app.Activity
 import android.opengl.GLES30.*
 import android.view.MotionEvent
+import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.math.*
 import com.klmn.misery.render.Material
 import com.klmn.misery.render.Mesh
@@ -11,8 +12,7 @@ import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
 import java.nio.FloatBuffer
 import kotlin.math.acos
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.pow
 import kotlin.random.Random
 
 /**
@@ -25,6 +25,11 @@ open class Game(val activity: Activity)
 
     open fun init() {}
     open fun onViewChanged(width: Int, height: Int) {}
+}
+
+class Motion {
+    var acceleration = Vec3f(0f)
+    var velocity = Vec3f(0f)
 }
 
 class PigGame(activity: Activity) : Game(activity)
@@ -44,10 +49,11 @@ class PigGame(activity: Activity) : Game(activity)
                 scale = Vec3f(0.05f),
                 rotation = Quaternion.rotation(Vec3f.RIGHT, 0.5f)
         )
-        val aabb = AABB(Vec3f(-25f, 0f, -85f), Vec3f(25f, 80f, 90f));
+        val aabb = AABB(Vec3f(-25f, 10f, -85f), Vec3f(25f, 40f, 90f));
 
         var touchID = -1
         var touchPos: Vec2f? = null
+        var lastInput = Vec2f(0f)
         fun createEntity() = Entity(
                 "mesh" to mesh,
                 "material" to material,
@@ -57,7 +63,7 @@ class PigGame(activity: Activity) : Game(activity)
                         -20f
                 )),
                 "aabb" to aabb,
-                "temp" to 0
+                "motion" to Motion()
         )
         createEntity()
         createEntity()
@@ -69,6 +75,7 @@ class PigGame(activity: Activity) : Game(activity)
                         Random.nextFloat() * 10f - 5f,
                         -20f
                 )),
+                "motion" to Motion(),
                 "movementControl" to TouchControls(
                         MotionEvent.ACTION_DOWN to { event ->
                             touchPos = Vec2f(event.x, event.y)
@@ -80,19 +87,11 @@ class PigGame(activity: Activity) : Game(activity)
                                         event.getX(event.findPointerIndex(touchID)),
                                         event.getY(event.findPointerIndex(touchID))
                                 )
-                                val pigTransform = this["transform", Transform::class]!!
-                                pigTransform.translation += Vec3f(
-                                        (touchPos!!.x - newPos.x) * 0.02f,
-                                        (touchPos!!.y - newPos.y) * 0.01f,
-                                        0f
-                                )
-                                fun clamp(value: Float, bottom: Float, top: Float) = min(top, max(bottom, value))
-                                pigTransform.translation =
-                                        Vec3f(
-                                                clamp(pigTransform.translation.x, -15f, 15f),
-                                                pigTransform.translation.y,
-                                                clamp(pigTransform.translation.z, -40f, 2f)
-                                        )
+
+                                val motion = this["motion", Motion::class]!!
+                                val input = Vec2f(touchPos!!.x - newPos.x, touchPos!!.y - newPos.y)
+                                motion.acceleration += Vec3f(input - lastInput, 0f)
+                                lastInput = input
 
                                 touchPos = newPos
                             }
@@ -101,20 +100,38 @@ class PigGame(activity: Activity) : Game(activity)
                 "aabb" to aabb
         )
 
-        val velocity = 0.1f
-        system("transform") { entity, delta ->
-            entity["transform", Transform::class]!!.rotation *= Quaternion.rotation(Vec3f.UP, delta * velocity * Math.PI.toFloat())
+        val coefficient = 1f / (2f - 2f.pow(1f/3f))
+        val complement = 1f - 2f * coefficient
+        fun verlet(pos: Vec3f, motion: Motion, delta: Float): Vec3f {
+            var res = pos
+            val halfDelta = delta / 2f
+            res += motion.velocity * halfDelta
+            motion.velocity += motion.acceleration * delta
+            return res + motion.velocity * halfDelta
+        }
+        system("transform", "motion") { entity, delta ->
+            val transform = entity["transform", Transform::class]!!
+            val motion = entity["motion", Motion::class]!!
+
+            var pos = verlet(transform.translation, motion, delta * coefficient);
+            pos = verlet(pos, motion, delta * complement);
+            pos = verlet(pos, motion, delta * coefficient);
+
+            motion.velocity *= .95f
+
+            if (pos.x <= -15f || pos.x >= 15f || pos.z <= -40f || pos.z >= 2f) motion.velocity *= -1.1f
+            transform.translation = pos
         }
 
-        system("movementControl") { entity, _ ->
+        system("movementControl", "motion") { entity, _ ->
             inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }
         }
 
 //        createBBRenderer()
 
-        interaction(arrayOf(), arrayOf()) { a, b, delta ->
-            val aT = a["transform", Transform::class]!!
-            aT.rotation = (aT.rotation * Quaternion.rotation(Vec3f.FORWARD, delta)).normalized
+        interaction(arrayOf("motion"), arrayOf("motion")) { a, b, delta ->
+            val aM = a["motion", Motion::class]!!
+            aM.velocity *= -1.1f
         }
     }
 
