@@ -4,6 +4,7 @@
 
 #include "interaction.h"
 #include <algorithm>
+#include <limits>
 
 namespace Misery { InteractionWorld interactions(ecs); }
 
@@ -18,6 +19,7 @@ InteractionWorld::InteractionWorld(ECS &ecs) : ecs(ecs), comparator{ .ecs = ecs 
 
 void InteractionWorld::onPutComponent(uint entity, uint type) {
     if (MATCHES(ecs.getEntity(entity).signature, interactableSignature)) {
+        LOGI("matching entity %i %i", entity, type);
         // a new matching entity
         if (0x1u << type & interactableSignature) addEntity(entity);
         // an existing matching entity
@@ -57,6 +59,7 @@ void InteractionWorld::update(JNIEnv* env, float delta) {
         uint entity = interactable.entity;
         matrix4f transform = ecs.getComponent<Transform>(entity, "transform")->toMatrix();
         AABB aabb = ecs.getComponent<AABB>(entity, "aabb")->transform(transform);
+
         std::memcpy(ecs.getComponent<AABB>(entity, "_taabb")->data, aabb.data, sizeof(AABB));
     }
     std::sort(interactables.begin(), interactables.end(), comparator);
@@ -191,15 +194,20 @@ bool InteractionWorld::Comparator::operator()(InteractionWorld::Interactable &a,
 }
 
 AABB AABB::transform(matrix4f &matrix) {
-    vector3f center(getCenter());
-    vector3f extents(getExtents());
+    vector3f tmin = matrix * vector3f(min.x, min.y, min.z), tmax(tmin);
+    vector3f points[] = {
+            matrix * vector3f(max.x, min.y, max.z),
+            matrix * vector3f(min.x, max.y, min.z),
+            matrix * vector3f(min.x, min.y, max.z),
+            matrix * vector3f(min.x, max.y, max.z),
+            matrix * vector3f(max.x, min.y, min.z),
+            matrix * vector3f(max.x, max.y, min.z),
+            matrix * vector3f(max.x, max.y, max.z)
+    };
+    for (auto& p : points) {
+        tmin = vector3f(std::min(tmin.x, p.x), std::min(tmin.y, p.y), std::min(tmin.z, p.z));
+        tmax = vector3f(std::max(tmax.x, p.x), std::max(tmax.y, p.y), std::max(tmax.z, p.z));
+    }
 
-    vector3f absExtents(std::abs(extents.x), std::abs(extents.y), std::abs(extents.z));
-    matrix4f absMatrix(matrix);
-    float* f = absMatrix[0];
-    for(uint i = 0; i < 4; i++) { f[i] = std::abs(f[i]); }
-
-    center = matrix * center;
-    extents = absMatrix * absExtents;
-    return { center - extents, center + extents };
+    return { tmin, tmax };
 }

@@ -109,17 +109,6 @@ class PigGame(activity: Activity) : Game(activity)
             inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }
         }
 
-        val lineSeg = floatArrayOf(
-                -500.0f, -500.0f, -500f,
-                -500.0f, -500.0f, 500f,
-                -500.0f, 500.0f, 500f,
-                -500.0f, 500.0f, -500f,
-                500.0f, 500.0f, -500f,
-                500.0f, -500.0f, 500f,
-                500.0f, -500.0f, -500f,
-                500.0f, 500.0f, 500f
-        )
-
         createBBRenderer()
 
         interaction(arrayOf("movementControl"), arrayOf("temp")) { a, b, _ ->
