@@ -55,6 +55,7 @@ struct ECSListener {
 
 class ECS {
     std::vector<Entity> entities;
+    std::vector<uint> removedEntities;
     ComponentClassBase* components[MAX_COMPONENTS];
     std::vector<const char*> types;
     std::vector<System> systems;

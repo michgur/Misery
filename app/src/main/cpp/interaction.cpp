@@ -19,7 +19,6 @@ InteractionWorld::InteractionWorld(ECS &ecs) : ecs(ecs), comparator{ .ecs = ecs 
 
 void InteractionWorld::onPutComponent(uint entity, uint type) {
     if (MATCHES(ecs.getEntity(entity).signature, interactableSignature)) {
-        LOGI("matching entity %i %i", entity, type);
         // a new matching entity
         if (0x1u << type & interactableSignature) addEntity(entity);
         // an existing matching entity
@@ -59,7 +58,6 @@ void InteractionWorld::update(JNIEnv* env, float delta) {
         uint entity = interactable.entity;
         matrix4f transform = ecs.getComponent<Transform>(entity, "transform")->toMatrix();
         AABB aabb = ecs.getComponent<AABB>(entity, "aabb")->transform(transform);
-
         std::memcpy(ecs.getComponent<AABB>(entity, "_taabb")->data, aabb.data, sizeof(AABB));
     }
     std::sort(interactables.begin(), interactables.end(), comparator);
@@ -127,6 +125,7 @@ void InteractionWorld::updateEntities() {
 }
 
 void InteractionWorld::addEntity(uint entity) {
+    LOGI("added entity %i", entity);
     Interactable interactable { .entity = entity };
     for (uint i = 0; i < interactions.size(); i++) findInteractions(interactable, i);
     interactables.push_back(interactable);

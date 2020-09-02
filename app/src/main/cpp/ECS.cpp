@@ -10,8 +10,17 @@
 namespace Misery { ECS ecs; }
 
 uint ECS::newEntity(jobject jwrapper) {
-    uint id = entities.size();
-    entities.push_back(Entity { .id = id, .jwrapper = jwrapper });
+    uint id;
+    if (removedEntities.empty()) {
+        id = entities.size();
+        entities.resize(entities.size() + 1);
+    }
+    else {
+        id = removedEntities.back();
+        removedEntities.pop_back();
+    }
+
+    entities[id] = Entity { .id = id, .jwrapper = jwrapper };
 
     Transform transform;
     putComponent(id, "transform", transform);
@@ -80,7 +89,7 @@ void ECS::clear(JNIEnv* env) {
     }
     for (auto& entity : entities) {
         entity.components.clear();
-        env->DeleteGlobalRef(entity.jwrapper);
+        if (entity.jwrapper != nullptr) env->DeleteGlobalRef(entity.jwrapper);
     }
     for (auto& system : systems) env->DeleteGlobalRef(system.jwrapper);
     for (auto& type : types) delete[] type;
@@ -119,7 +128,6 @@ void ECS::removeComponent(uint entity, uint type) {
 
 void ECS::removeEntity(JNIEnv *env, uint entity) {
     // delete entity data
-    env->DeleteGlobalRef(entities[entity].jwrapper);
     for (auto it : entities[entity].components) {
         auto compClass = dynamic_cast<ComponentClass<jobject>*>(components[it.first]);
         if (compClass != nullptr)
@@ -127,15 +135,14 @@ void ECS::removeEntity(JNIEnv *env, uint entity) {
         removeComponent(entity, it.first);
     }
 
-    if (entity != entities.size() - 1) {
-        entities[entity] = entities.back();
-        entities[entity].id = entity;
-
-        jclass entityClass = env->GetObjectClass(entities[entity].jwrapper);
-        jfieldID idField = env->GetFieldID(entityClass, "id", "I");
-        env->SetIntField(entities[entity].jwrapper, idField, entity);
+    env->DeleteGlobalRef(entities[entity].jwrapper);
+    if (entity == entities.size() - 1) entities.pop_back();
+    else {
+        //disable the entity, override it when possible
+        entities[entity].signature = 0;
+        entities[entity].jwrapper = nullptr;
+        removedEntities.push_back(entity);
     }
-    entities.pop_back();
 }
 
 void ECS::removeSystem(void (*apply)(uint, float)) {
