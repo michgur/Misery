@@ -4,6 +4,16 @@ import com.klmn.misery.math.Quaternion
 import com.klmn.misery.math.Vec3f
 import kotlin.reflect.KProperty
 
+class NativeFloatDelegate(val offset: Int) {
+    var value = 0f
+    operator fun getValue(thisRef: NativeComponent, property: KProperty<*>) =
+            if (thisRef.native) MiseryJNI.getFloat(thisRef.pointer, offset) else value
+    operator fun setValue(thisRef: NativeComponent, property: KProperty<*>, value: Float) {
+        if (thisRef.native) MiseryJNI.setFloat(thisRef.pointer, value, offset)
+        else this.value = value
+    }
+}
+
 class NativeVec3fDelegate(val offset: Int) {
     var value = Vec3f()
     operator fun getValue(thisRef: NativeComponent, property: KProperty<*>) =

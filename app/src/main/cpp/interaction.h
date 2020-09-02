@@ -7,7 +7,7 @@
 
 #include "Transform.h"
 #include <assimp/vector3.inl>
-#include "AABB.h"
+#include "colliders.h"
 
 struct Interaction {
     uint64_t active_signature;

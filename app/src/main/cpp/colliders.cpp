@@ -2,7 +2,7 @@
 // Created by micha on 9/2/2020.
 //
 
-#include "AABB.h"
+#include "colliders.h"
 
 AABB AABB::transform(matrix4f &matrix) {
     vector3f tmin = matrix * vector3f(min.x, min.y, min.z), tmax(tmin);

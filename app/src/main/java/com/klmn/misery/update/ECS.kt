@@ -12,7 +12,8 @@ open class Entity(vararg components: Pair<String, Any>) {
     init { for (component in components) set(component.first, component.second) }
 
     operator fun <T : Any> get(type: String, cls: KClass<T>): T? = when (cls) {
-        Transform::class -> Transform(MiseryJNI.getTransformComponent(id)) as T?
+        Motion::class -> Motion(MiseryJNI.getComponentPointer(id, type)) as T?
+        Transform::class -> Transform(MiseryJNI.getComponentPointer(id, type)) as T?
         Material::class -> Material(MiseryJNI.getMaterialComponent(id)) as T?
         Long::class -> MiseryJNI.getComponentPointer(id, type) as T?
         else -> cls.safeCast(MiseryJNI.getComponent(id, type))
@@ -20,9 +21,10 @@ open class Entity(vararg components: Pair<String, Any>) {
     operator fun set(type: String, value: Any) = when(value::class) {
         Int::class -> MiseryJNI.putIntComponent(id, type, value as Int)
         Long::class -> MiseryJNI.putLongComponent(id, type, value as Long)
-        Transform::class -> MiseryJNI.setTransformComponent(id, (value as Transform).toFloatArray())
-        AABB::class -> MiseryJNI.setAABBComponent(id, (value as AABB).toFloatArray())
-        Material::class -> MiseryJNI.setMaterialComponent(id, (value as Material).data.id)
+        Transform::class -> MiseryJNI.putTransformComponent(id, (value as Transform).toFloatArray())
+        AABB::class -> MiseryJNI.putAABBComponent(id, (value as AABB).toFloatArray())
+        Motion::class -> MiseryJNI.putMotionComponent(id, (value as Motion).toFloatArray())
+        Material::class -> MiseryJNI.putMaterialComponent(id, (value as Material).data.id)
         Mesh::class -> MiseryJNI.putLongComponent(id, type, (value as Mesh).pointer)
         else -> MiseryJNI.putComponent(id, type, value);
     }

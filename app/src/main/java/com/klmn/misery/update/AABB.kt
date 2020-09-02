@@ -22,12 +22,6 @@ class AABB : NativeComponent {
 
     var min : Vec3f by NativeVec3fDelegate(0)
     var max : Vec3f by NativeVec3fDelegate(3)
-//    var min = Vec3f()
-//        get() = if (native) Vec3f(MiseryJNI.getFloats(pointer, 3, 0)) else field
-//        set(value) = if (native) MiseryJNI.setFloats(pointer, value.toFloatArray(), 0) else field = value
-//    var max = Vec3f()
-//        get() = if (native) Vec3f(MiseryJNI.getFloats(pointer, 3, 3)) else field
-//        set(value) = if (native) MiseryJNI.setFloats(pointer, value.toFloatArray(), 3) else field = value
 
     inline var center
         get() = (max + min) / 2f

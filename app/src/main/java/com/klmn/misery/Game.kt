@@ -27,11 +27,6 @@ open class Game(val activity: Activity)
     open fun onViewChanged(width: Int, height: Int) {}
 }
 
-class Motion {
-    var acceleration = Vec3f(0f)
-    var velocity = Vec3f(0f)
-}
-
 class PigGame(activity: Activity) : Game(activity)
 {
     private var projection = Mat4f()
@@ -99,29 +94,6 @@ class PigGame(activity: Activity) : Game(activity)
                 ),
                 "aabb" to aabb
         )
-
-        val coefficient = 1f / (2f - 2f.pow(1f/3f))
-        val complement = 1f - 2f * coefficient
-        fun verlet(pos: Vec3f, motion: Motion, delta: Float): Vec3f {
-            var res = pos
-            val halfDelta = delta / 2f
-            res += motion.velocity * halfDelta
-            motion.velocity += motion.acceleration * delta
-            return res + motion.velocity * halfDelta
-        }
-        system("transform", "motion") { entity, delta ->
-            val transform = entity["transform", Transform::class]!!
-            val motion = entity["motion", Motion::class]!!
-
-            var pos = verlet(transform.translation, motion, delta * coefficient);
-            pos = verlet(pos, motion, delta * complement);
-            pos = verlet(pos, motion, delta * coefficient);
-
-            motion.velocity *= .95f
-
-            if (pos.x <= -15f || pos.x >= 15f || pos.z <= -40f || pos.z >= 2f) motion.velocity *= -1.1f
-            transform.translation = pos
-        }
 
         system("movementControl", "motion") { entity, _ ->
             inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }

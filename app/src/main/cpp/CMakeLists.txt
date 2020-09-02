@@ -6,7 +6,8 @@ add_library( misery-native-lib SHARED
         assets.cpp
         RenderContext.cpp
         interaction.cpp
-        AABB.cpp
+        colliders.cpp
+        physics.cpp
 )
 
 add_library( assimp-lib SHARED IMPORTED )

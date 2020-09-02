@@ -2,8 +2,8 @@
 // Created by micha on 9/2/2020.
 //
 
-#ifndef MISERY_AABB_H
-#define MISERY_AABB_H
+#ifndef MISERY_COLLIDERS_H
+#define MISERY_COLLIDERS_H
 
 #include "Transform.h"
 #include <assimp/vector3.inl>
@@ -30,4 +30,27 @@ struct AABB {
     AABB transform(matrix4f& matrix);
 };
 
-#endif //MISERY_AABB_H
+struct Sphere {
+    vector3f center;
+    float radius;
+
+    inline bool intersects(Sphere& other) {
+        return (center - other.center).Length() < radius + other.radius;
+    }
+};
+
+struct Plane {
+    vector3f normal;
+    float distance;
+
+    inline bool intersects(Sphere& other) {
+        return std::abs(normal * other.center + distance) - other.radius < 0;
+    }
+
+    inline Plane normalized() {
+        float length = normal.Length();
+        return { normal / length, distance / length };
+    }
+};
+
+#endif //MISERY_COLLIDERS_H

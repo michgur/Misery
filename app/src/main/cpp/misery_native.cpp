@@ -18,6 +18,7 @@
 #include "assets.h"
 #include "RenderContext.h"
 #include "interaction.h"
+#include "physics.h"
 
 
 extern "C"
@@ -28,6 +29,8 @@ Java_com_klmn_misery_jni_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject th
 
     const char* types[] = { "transform", "mesh", "material" };
     Misery::ecs.addSystem(Misery::renderContext.render, 3, types);
+    const char* motionTypes[] = { "transform", "motion" };
+    Misery::ecs.addSystem(motionSystem, 2, motionTypes);
 }
 
 
@@ -130,15 +133,15 @@ Java_com_klmn_misery_jni_MiseryJNI_getTransformComponent(JNIEnv *env, jobject th
     return (long) t->data;
 }extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_setTransformComponent__I_3F(JNIEnv *env, jobject thiz, jint entity,
-                                                           jfloatArray f) {
+Java_com_klmn_misery_jni_MiseryJNI_putTransformComponent(JNIEnv *env, jobject thiz, jint entity,
+                                                         jfloatArray f) {
     auto* t = Misery::ecs.getComponent<Transform>(entity, "transform");
     env->GetFloatArrayRegion(f, 0, TRANSFORM_SIZE, t->data);
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_setMaterialComponent(JNIEnv *env, jobject thiz, jint entity,
-                                                    jint material) {
+Java_com_klmn_misery_jni_MiseryJNI_putMaterialComponent(JNIEnv *env, jobject thiz, jint entity,
+                                                        jint material) {
     Misery::ecs.removeComponent(material, "transform");
     uint ref = (uint) material;
     Misery::ecs.putComponent<uint>(entity, "material", ref);
@@ -184,17 +187,11 @@ Java_com_klmn_misery_jni_MiseryJNI_removeEntity(JNIEnv *env, jobject thiz, jint 
     Misery::ecs.removeEntity(env, entity);
 }extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_setAABBComponent(JNIEnv *env, jobject thiz, jint entity,
-                                                jfloatArray aabb) {
+Java_com_klmn_misery_jni_MiseryJNI_putAABBComponent(JNIEnv *env, jobject thiz, jint entity,
+                                                    jfloatArray aabb) {
     AABB component;
     env->GetFloatArrayRegion(aabb, 0, 6, component.data);
     Misery::ecs.putComponent(entity, "aabb", component);
-    auto* t = Misery::ecs.getComponent<Transform>(entity, "transform");
-    if (t != nullptr) {
-        matrix4f matrix = t->toMatrix();
-        AABB taabb = component.transform(matrix);
-        Misery::ecs.putComponent(entity, "_taabb", taabb);
-    }
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_addInteraction(JNIEnv *env, jobject thiz, jobjectArray active_types,
@@ -208,4 +205,12 @@ Java_com_klmn_misery_jni_MiseryJNI_getComponentPointer(JNIEnv *env, jobject thiz
     void* result = Misery::ecs.getComponent<void>(entity, typeChars);
     env->ReleaseStringUTFChars(type, typeChars);
     return (long) result;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_putMotionComponent(JNIEnv *env, jobject thiz, jint entity,
+                                                      jfloatArray motion) {
+    Motion component;
+    env->GetFloatArrayRegion(motion, 0, 6, component.data);
+    Misery::ecs.putComponent(entity, "motion", component);
 }

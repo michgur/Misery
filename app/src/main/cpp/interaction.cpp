@@ -130,6 +130,10 @@ void InteractionWorld::addEntity(uint entity) {
     Interactable interactable { .entity = entity };
     for (uint i = 0; i < interactions.size(); i++) findInteractions(interactable, i);
     interactables.push_back(interactable);
+
+    matrix4f transform = ecs.getComponent<Transform>(entity, "transform")->toMatrix();
+    AABB aabb = ecs.getComponent<AABB>(entity, "aabb")->transform(transform);
+    ecs.putComponent(entity, "_taabb", aabb);
 }
 
 void InteractionWorld::findInteractions
