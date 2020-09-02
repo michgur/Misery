@@ -15,7 +15,7 @@ InteractionWorld::InteractionWorld(ECS &ecs) : ecs(ecs), comparator{ .ecs = ecs 
     ecs.addListener(this);
 }
 
-#define MATCHES(a, b) (a & b) == b
+#define MATCHES(a, b) ((a & b) == b)
 
 void InteractionWorld::onPutComponent(uint entity, uint type) {
     if (MATCHES(ecs.getEntity(entity).signature, interactableSignature)) {
@@ -27,10 +27,12 @@ void InteractionWorld::onPutComponent(uint entity, uint type) {
 }
 
 void InteractionWorld::onRemoveComponent(uint entity, uint type) {
-    // entity no longer matching
-    if (0x1u << type & interactableSignature) toRemove.push_back(entity);
-    // entity still matching
-    else toUpdate.push_back(entity);
+    if (MATCHES(ecs.getEntity(entity).signature, interactableSignature)) {
+        // entity no longer matching
+        if (0x1u << type & interactableSignature) toRemove.push_back(entity);
+        // entity still matching
+        else toUpdate.push_back(entity);
+    }
 }
 
 void InteractionWorld::interact(JNIEnv* env, float delta, Interactable& active, Interactable& passive) {
@@ -125,7 +127,6 @@ void InteractionWorld::updateEntities() {
 }
 
 void InteractionWorld::addEntity(uint entity) {
-    LOGI("added entity %i", entity);
     Interactable interactable { .entity = entity };
     for (uint i = 0; i < interactions.size(); i++) findInteractions(interactable, i);
     interactables.push_back(interactable);

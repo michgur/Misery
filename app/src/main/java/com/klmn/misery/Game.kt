@@ -43,7 +43,7 @@ class PigGame(activity: Activity) : Game(activity)
                 scale = Vec3f(0.05f),
                 rotation = Quaternion.rotation(Vec3f.RIGHT, 0.5f)
         )
-        val aabb = AABB(Vec3f(-500f), Vec3f(500f));
+        val aabb = AABB(Vec3f(-100f), Vec3f(100f));
 
         var touchID = -1
         var touchPos: Vec2f? = null
@@ -146,7 +146,7 @@ class PigGame(activity: Activity) : Game(activity)
         system("transform", "_taabb") { entity, _ ->
             bbShader.bind()
             val mvp = entity["transform", Transform::class]!!.matrix
-            val floats = MiseryJNI.getFloats(entity["_taabb", Long::class]!!, 6, 0)
+            val floats = MiseryJNI.getFloats(entity["aabb", Long::class]!!, 6, 0)
             mvp[0, 0] *= (floats[3] - floats[0]) / 2f
             mvp[1, 1] *= (floats[4] - floats[1]) / 2f
             mvp[2, 2] *= (floats[5] - floats[2]) / 2f
