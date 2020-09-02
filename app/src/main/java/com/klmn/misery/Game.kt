@@ -10,6 +10,7 @@ import com.klmn.misery.render.Shader
 import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
 import java.nio.FloatBuffer
+import kotlin.math.acos
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -31,7 +32,7 @@ class PigGame(activity: Activity) : Game(activity)
     private var projection = Mat4f()
     override fun onViewChanged(width: Int, height: Int) {
         MiseryJNI.setViewSize(width, height)
-        projection = Mat4f.perspective(90f, width.toFloat(), height.toFloat(), 0.1f, 1000f)
+        projection = Mat4f.perspective(acos(0f), width.toFloat(), height.toFloat(), 0.1f, 1000f)
     }
 
     override fun init() {
@@ -43,7 +44,7 @@ class PigGame(activity: Activity) : Game(activity)
                 scale = Vec3f(0.05f),
                 rotation = Quaternion.rotation(Vec3f.RIGHT, 0.5f)
         )
-        val aabb = AABB(Vec3f(-100f), Vec3f(100f));
+        val aabb = AABB(Vec3f(-25f, 0f, -85f), Vec3f(25f, 80f, 90f));
 
         var touchID = -1
         var touchPos: Vec2f? = null
@@ -52,7 +53,7 @@ class PigGame(activity: Activity) : Game(activity)
                 "material" to material,
                 "transform" to transform.copy(translation = Vec3f(
                         Random.nextFloat() * 10f - 5f,
-                        Random.nextFloat() * 10f - 5f,
+                        Random.nextFloat() * 40f - 20f,
                         -20f
                 )),
                 "aabb" to aabb,
@@ -109,16 +110,15 @@ class PigGame(activity: Activity) : Game(activity)
             inputBuffer.forEach { entity["movementControl", TouchControls::class]!!.onTouchEvent(entity, it) }
         }
 
-        createBBRenderer()
+//        createBBRenderer()
 
-        interaction(arrayOf("movementControl"), arrayOf("temp")) { a, b, _ ->
-            println("omfg")
-            b.destroy()
-            createEntity()
+        interaction(arrayOf(), arrayOf()) { a, b, delta ->
+            val aT = a["transform", Transform::class]!!
+            aT.rotation = (aT.rotation * Quaternion.rotation(Vec3f.FORWARD, delta)).normalized
         }
     }
 
-    fun createBBRenderer() {
+    private fun createBBRenderer() {
         val vertices = floatArrayOf(
                 1f, 1f, 1f, 1f, 1f, -1f,
                 -1f, 1f, 1f, -1f, 1f, -1f,
@@ -145,12 +145,12 @@ class PigGame(activity: Activity) : Game(activity)
 
         system("transform", "_taabb") { entity, _ ->
             bbShader.bind()
-            val mvp = entity["transform", Transform::class]!!.matrix
+            val transform = entity["transform", Transform::class]!!.matrix
             val floats = MiseryJNI.getFloats(entity["aabb", Long::class]!!, 6, 0)
-            mvp[0, 0] *= (floats[3] - floats[0]) / 2f
-            mvp[1, 1] *= (floats[4] - floats[1]) / 2f
-            mvp[2, 2] *= (floats[5] - floats[2]) / 2f
-            bbShader.loadUniform("mvp", projection * mvp)
+            transform[0, 0] *= (floats[3] - floats[0]) / 2f
+            transform[1, 1] *= (floats[4] - floats[1]) / 2f
+            transform[2, 2] *= (floats[5] - floats[2]) / 2f
+            bbShader.loadUniform("mvp", projection * transform)
             glBindVertexArray(buffers[0])
             glLineWidth(3.3f)
             glClear(GL_DEPTH_BUFFER_BIT)

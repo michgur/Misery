@@ -99,7 +99,7 @@ Misery::Mesh* Misery::loadMeshFromAsset(const char* asset, const char* ext) {
     loadVertices(mesh, vertices);
     uint vao = createVAO(indices, sizeof(indices), vertices, sizeof(vertices));
 
-    return new Misery::Mesh {vao, (GLuint) (mesh->mNumFaces * 3)};
+    return new Misery::Mesh { vao, (GLuint) (mesh->mNumFaces * 3) };
 }
 
 void openAndAddShader(int program, const char* fileName, int type) {
