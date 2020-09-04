@@ -62,6 +62,8 @@ data class ImmutableQuaternion(val x: Float, val y: Float, val z: Float, val w: 
     override fun toString() = "[($x, $y, $z), $w]"
     fun toFloatArray() = floatArrayOf(w, x, y, z)
 
+    fun toMutable() = Quaternion(x, y, z, w)
+
     companion object {
         fun rotation(axis: Vec3f, angle: Float) = ImmutableQuaternion(axis * sin(angle / 2f), cos(angle / 2))
         fun fromMatrix(mat4f: Mat4f): ImmutableQuaternion {

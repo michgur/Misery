@@ -4,21 +4,18 @@ import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.jni.NativeComponent
 import com.klmn.misery.jni.NativeQuaternionDelegate
 import com.klmn.misery.jni.NativeVec3fDelegate
-import com.klmn.misery.math.ImmutableVec3f
-import com.klmn.misery.math.Mat4f
-import com.klmn.misery.math.Quaternion
-import com.klmn.misery.math.Vec3f
+import com.klmn.misery.math.*
 
 class Transform : NativeComponent {
     constructor(pointer: Long) : super(pointer)
     constructor(translation: Vec3f = Vec3f(), rotation: Quaternion = Quaternion(), scale: Vec3f = Vec3f(1f)) {
         this.translation = translation.toImmutable()
-        this.rotation = rotation
+        this.rotation = rotation.toImmutable()
         this.scale = scale.toImmutable()
     }
 
     var translation: ImmutableVec3f by NativeVec3fDelegate(0)
-    var rotation: Quaternion by NativeQuaternionDelegate(3)
+    var rotation: ImmutableQuaternion by NativeQuaternionDelegate(3)
     var scale: ImmutableVec3f by NativeVec3fDelegate(7)
 
     fun toFloatArray() =
@@ -67,7 +64,7 @@ class Transform : NativeComponent {
             r[0] = c0.x; r[1] = c1.x; r[2] = c2.x
             r[4] = c0.y; r[5] = c1.y; r[6] = c2.y
             r[8] = c0.z; r[9] = c1.z; r[10] = c2.z
-            rotation = Quaternion.fromMatrix(r)
+            rotation = ImmutableQuaternion.fromMatrix(r)
         }
 
     override fun equals(other: Any?): Boolean {
@@ -93,7 +90,7 @@ class Transform : NativeComponent {
     }
 
     fun copy(translation: Vec3f = this.translation.xyz,
-             rotation: Quaternion = this.rotation,
+             rotation: Quaternion = this.rotation.toMutable(),
              scale: Vec3f = this.scale.xyz) = Transform(translation, rotation, scale)
 
     operator fun component1() = translation

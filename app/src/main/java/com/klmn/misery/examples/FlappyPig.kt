@@ -4,6 +4,7 @@ import android.app.Activity
 import android.view.MotionEvent
 import com.klmn.misery.Game
 import com.klmn.misery.math.ImmutableVec3f
+import com.klmn.misery.math.Quaternion
 import com.klmn.misery.math.Vec3f
 import com.klmn.misery.render.Material
 import com.klmn.misery.render.Mesh
@@ -33,15 +34,18 @@ class FlappyPig(activity: Activity) : Game(activity) {
 
     private object Render {
         val shader: Shader by lazy { Shader("vertex.glsl", "fragment.glsl") }
-        val cubeMesh: Mesh by lazy { Mesh("cube.obj") }
+        val cubeMesh: Mesh by lazy { Mesh("pig.obj") }
     }
     private fun createPlayer() = Entity (
             "mesh" to Render.cubeMesh,
             "material" to Material(
                     shader = Render.shader,
-                    diffuse = Texture(activity.assets, "cubeTexture.jpg")
+                    diffuse = Texture(activity.assets, "pig.png")
             ),
-            "transform" to Transform(translation = Vec3f.BACK * 18f),
+            "transform" to Transform(
+                    translation = Vec3f.BACK * 18f,
+                    rotation = Quaternion.rotation(Vec3f.UP, 1.5f)
+            ),
             "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
             "motion" to Motion(),
             "controls" to TouchControls(
