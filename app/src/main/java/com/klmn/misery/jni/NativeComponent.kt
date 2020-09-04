@@ -1,7 +1,7 @@
 package com.klmn.misery.jni
 
-import com.klmn.misery.math.Quaternion
-import com.klmn.misery.math.Vec3f
+import com.klmn.misery.math.ImmutableQuaternion
+import com.klmn.misery.math.ImmutableVec3f
 import kotlin.reflect.KProperty
 
 class NativeFloatDelegate(val offset: Int) {
@@ -15,20 +15,20 @@ class NativeFloatDelegate(val offset: Int) {
 }
 
 class NativeVec3fDelegate(val offset: Int) {
-    var value = Vec3f()
+    var value = ImmutableVec3f()
     operator fun getValue(thisRef: NativeComponent, property: KProperty<*>) =
-        if (thisRef.native) Vec3f(MiseryJNI.getFloats(thisRef.pointer, 3, offset)) else value
-    operator fun setValue(thisRef: NativeComponent, property: KProperty<*>, value: Vec3f) {
+        if (thisRef.native) ImmutableVec3f(MiseryJNI.getFloats(thisRef.pointer, 3, offset)) else value
+    operator fun setValue(thisRef: NativeComponent, property: KProperty<*>, value: ImmutableVec3f) {
         if (thisRef.native) MiseryJNI.setFloats(thisRef.pointer, value.toFloatArray(), offset)
         else this.value = value
     }
 }
 
 class NativeQuaternionDelegate(val offset: Int) {
-    var value = Quaternion()
+    var value = ImmutableQuaternion()
     operator fun getValue(thisRef: NativeComponent, property: KProperty<*>) =
-        if (thisRef.native) Quaternion(MiseryJNI.getFloats(thisRef.pointer, 4, offset)) else value
-    operator fun setValue(thisRef: NativeComponent, property: KProperty<*>, value: Quaternion) {
+        if (thisRef.native) ImmutableQuaternion(MiseryJNI.getFloats(thisRef.pointer, 4, offset)) else value
+    operator fun setValue(thisRef: NativeComponent, property: KProperty<*>, value: ImmutableQuaternion) {
         if (thisRef.native) MiseryJNI.setFloats(thisRef.pointer, value.toFloatArray(), offset)
         else this.value = value
     }

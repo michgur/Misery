@@ -3,6 +3,7 @@ package com.klmn.misery.examples
 import android.app.Activity
 import android.view.MotionEvent
 import com.klmn.misery.Game
+import com.klmn.misery.math.ImmutableVec3f
 import com.klmn.misery.math.Vec3f
 import com.klmn.misery.render.Material
 import com.klmn.misery.render.Mesh
@@ -46,7 +47,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
             "controls" to TouchControls(
                     MotionEvent.ACTION_DOWN to { event ->
                         if (speed == 0f) {
-                            this["transform", Transform::class]!!.translation = Vec3f.BACK * 18f
+                            this["transform", Transform::class]!!.translation = ImmutableVec3f.BACK * 18f
 
                             createPillar()
                             speed = 3f
@@ -81,7 +82,8 @@ class FlappyPig(activity: Activity) : Game(activity) {
 
         system("background") { entity, delta ->
             val transform = entity["transform", Transform::class]!!
-            if (transform.translation.x > 40f) transform.translation = Vec3f(-40f, transform.translation.y, transform.translation.z)
+            if (transform.translation.x > 40f)
+                transform.translation = ImmutableVec3f(-40f, transform.translation.yz)
             transform.translation += Vec3f.RIGHT * speed * delta
         }
 

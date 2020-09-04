@@ -28,11 +28,16 @@ data class Vec2f(var x: Float, var y: Float)
     operator fun minus(other: Vec2f) = Vec2f(x - other.x, y - other.y)
     operator fun times(other: Vec2f) = Vec2f(x * other.x, y * other.y)
     operator fun div(other: Vec2f) = Vec2f(x / other.x, y / other.y)
+    operator fun plus(other: ImmutableVec2f) = Vec2f(x + other.x, y + other.y)
+    operator fun minus(other: ImmutableVec2f) = Vec2f(x - other.x, y - other.y)
+    operator fun times(other: ImmutableVec2f) = Vec2f(x * other.x, y * other.y)
+    operator fun div(other: ImmutableVec2f) = Vec2f(x / other.x, y / other.y)
 
     operator fun times(f: Float) = Vec2f(x * f, y * f)
     operator fun div(f: Float) = Vec2f(x / f, y / f)
 
     infix fun dot(other: Vec2f) = x * other.x + y * other.y
+    infix fun dot(other: ImmutableVec2f) = x * other.x + y * other.y
 
     override fun toString() = "($x, $y)"
 

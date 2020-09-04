@@ -4,6 +4,7 @@ import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.jni.NativeComponent
 import com.klmn.misery.jni.NativeQuaternionDelegate
 import com.klmn.misery.jni.NativeVec3fDelegate
+import com.klmn.misery.math.ImmutableVec3f
 import com.klmn.misery.math.Mat4f
 import com.klmn.misery.math.Quaternion
 import com.klmn.misery.math.Vec3f
@@ -11,14 +12,14 @@ import com.klmn.misery.math.Vec3f
 class Transform : NativeComponent {
     constructor(pointer: Long) : super(pointer)
     constructor(translation: Vec3f = Vec3f(), rotation: Quaternion = Quaternion(), scale: Vec3f = Vec3f(1f)) {
-        this.translation = translation
+        this.translation = translation.toImmutable()
         this.rotation = rotation
-        this.scale = scale
+        this.scale = scale.toImmutable()
     }
 
-    var translation: Vec3f by NativeVec3fDelegate(0)
+    var translation: ImmutableVec3f by NativeVec3fDelegate(0)
     var rotation: Quaternion by NativeQuaternionDelegate(3)
-    var scale: Vec3f by NativeVec3fDelegate(7)
+    var scale: ImmutableVec3f by NativeVec3fDelegate(7)
 
     fun toFloatArray() =
         if (native) MiseryJNI.getFloats(pointer, 10, 0)
@@ -59,8 +60,8 @@ class Transform : NativeComponent {
             var c0 = Vec3f(matrix[0], matrix[4], matrix[8])
             var c1 = Vec3f(matrix[1], matrix[5], matrix[9])
             var c2 = Vec3f(matrix[2], matrix[6], matrix[10])
-            translation = Vec3f(matrix[3], matrix[7], matrix[11])
-            scale = Vec3f(c0.length, c1.length, c2.length)
+            translation = Vec3f(matrix[3], matrix[7], matrix[11]).toImmutable()
+            scale = Vec3f(c0.length, c1.length, c2.length).toImmutable()
             c0 /= scale.x; c1 /= scale.y; c2 /= scale.z
             val r = Mat4f()
             r[0] = c0.x; r[1] = c1.x; r[2] = c2.x
@@ -91,9 +92,9 @@ class Transform : NativeComponent {
                 "\ttranslation: $translation\n\trotation: $rotation\n\tscale: $scale\n}"
     }
 
-    fun copy(translation: Vec3f = this.translation,
+    fun copy(translation: Vec3f = this.translation.xyz,
              rotation: Quaternion = this.rotation,
-             scale: Vec3f = this.scale) = Transform(translation, rotation, scale)
+             scale: Vec3f = this.scale.xyz) = Transform(translation, rotation, scale)
 
     operator fun component1() = translation
     operator fun component2() = rotation

@@ -33,6 +33,10 @@ data class Vec3f(var x: Float, var y: Float, var z: Float)
     operator fun minus(other: Vec3f) = Vec3f(x - other.x, y - other.y, z - other.z)
     operator fun times(other: Vec3f) = Vec3f(x * other.x, y * other.y, z * other.z)
     operator fun div(other: Vec3f) = Vec3f(x / other.x, y / other.y, z / other.z)
+    operator fun plus(other: ImmutableVec3f) = Vec3f(x + other.x, y + other.y, z + other.z)
+    operator fun minus(other: ImmutableVec3f) = Vec3f(x - other.x, y - other.y, z - other.z)
+    operator fun times(other: ImmutableVec3f) = Vec3f(x * other.x, y * other.y, z * other.z)
+    operator fun div(other: ImmutableVec3f) = Vec3f(x / other.x, y / other.y, z / other.z)
 
     operator fun times(f: Float) = Vec3f(x * f, y * f, z * f)
     operator fun div(f: Float) = Vec3f(x / f, y / f, z / f)
@@ -43,9 +47,38 @@ data class Vec3f(var x: Float, var y: Float, var z: Float)
             z * other.x - x * other.z,
             x * other.y - y * other.x
     )
+    infix fun dot(other: ImmutableVec3f) = x * other.x + y * other.y + z * other.z
+    infix fun cross(other: ImmutableVec3f) = Vec3f(
+            y * other.z - z * other.y,
+            z * other.x - x * other.z,
+            x * other.y - y * other.x
+    )
 
     override fun toString() = "($x, $y, $z)"
     fun toFloatArray() = floatArrayOf(x, y, z)
+
+    fun toImmutable() = ImmutableVec3f(x, y, z)
+
+    inline val xyz: Vec3f
+        get() = Vec3f(x, y, z)
+    inline var xy: Vec2f
+        get() = Vec2f(x, y)
+        set(value) { x = value.x; y = value.y }
+    inline var xz: Vec2f
+        get() = Vec2f(x, z)
+        set(value) { x = value.x; z = value.y }
+    inline var yx: Vec2f
+        get() = Vec2f(y, x)
+        set(value) { y = value.x; x = value.y }
+    inline var yz: Vec2f
+        get() = Vec2f(y, z)
+        set(value) { y = value.x; z = value.y }
+    inline var zx: Vec2f
+        get() = Vec2f(z, x)
+        set(value) { z = value.x; x = value.y }
+    inline var zy: Vec2f
+        get() = Vec2f(z, y)
+        set(value) { z = value.x; y = value.y }
 
     companion object {
         val UP      = Vec3f(0f, 1f, 0f)
