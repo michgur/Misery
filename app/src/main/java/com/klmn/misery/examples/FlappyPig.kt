@@ -56,7 +56,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
                             createPillar()
                             speed = 3f
                         }
-                        else this["motion", Motion::class]!!.acceleration = Vec3f.UP * 45f
+                        else this["motion", Motion::class]!!.acceleration = ImmutableVec3f.UP * 45f
                     },
             )
     )
@@ -112,7 +112,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
         }
 
         interaction(arrayOf("controls"), arrayOf("pillar")) { e, p, _ ->
-            e["motion", Motion::class]!!.acceleration = Vec3f(0f)
+            e["motion", Motion::class]!!.acceleration = ImmutableVec3f(0f)
             speed = 0f
             p.destroy()
         }
