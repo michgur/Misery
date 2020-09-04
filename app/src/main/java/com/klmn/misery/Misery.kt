@@ -2,6 +2,7 @@ package com.klmn.misery
 
 import android.app.Activity
 import android.os.Bundle
+import com.klmn.misery.examples.FlappyPig
 import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.render.MiseryView
 
@@ -14,7 +15,7 @@ class Misery : Activity()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val view = MiseryView(PigGame(this))
+        val view = MiseryView(FlappyPig(this))
         setContentView(view)
 
         MiseryJNI.setNativeAssetManager(assets)

@@ -6,18 +6,20 @@ import com.klmn.misery.render.Mesh
 import kotlin.reflect.KClass
 import kotlin.reflect.full.safeCast
 
-open class Entity(vararg components: Pair<String, Any>) {
+open class Entity(components: Map<String, Any>) {
     val id: Int = MiseryJNI.createEntity(this)
 
-    init { for (component in components) set(component.first, component.second) }
+    constructor(vararg components: Pair<String, Any>) : this(mapOf(*components))
+    init { for (component in components.entries) set(component.key, component.value) }
 
-    operator fun <T : Any> get(type: String, cls: KClass<T>): T? = when (cls) {
-        Motion::class -> Motion(MiseryJNI.getComponentPointer(id, type)) as T?
-        Transform::class -> Transform(MiseryJNI.getComponentPointer(id, type)) as T?
-        Material::class -> Material(MiseryJNI.getMaterialComponent(id)) as T?
-        Long::class -> MiseryJNI.getComponentPointer(id, type) as T?
-        else -> cls.safeCast(MiseryJNI.getComponent(id, type))
-    }
+    operator fun <T : Any> get(type: String, cls: KClass<T>): T? = cls.safeCast(when (cls) {
+        Motion::class -> Motion(MiseryJNI.getComponentPointer(id, type))
+        Transform::class -> Transform(MiseryJNI.getComponentPointer(id, type))
+        AABB::class -> AABB(MiseryJNI.getComponentPointer(id, type))
+        Material::class -> Material(MiseryJNI.getMaterialComponent(id))
+        Long::class -> MiseryJNI.getComponentPointer(id, type)
+        else -> MiseryJNI.getComponent(id, type)
+    })
     operator fun set(type: String, value: Any) = when(value::class) {
         Int::class -> MiseryJNI.putIntComponent(id, type, value as Int)
         Long::class -> MiseryJNI.putLongComponent(id, type, value as Long)

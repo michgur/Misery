@@ -19,19 +19,19 @@ import kotlin.random.Random
  * ಠ^ಠ.
  * Created by Michael on 1/18/2019.
  */
-open class Game(val activity: Activity)
+abstract class Game(val activity: Activity)
 {
     val inputBuffer = mutableSetOf<MotionEvent>()
 
-    open fun init() {}
-    open fun onViewChanged(width: Int, height: Int) {}
+    abstract fun init()
+    open fun onViewChanged(width: Int, height: Int) { MiseryJNI.setViewSize(width, height) }
 }
 
 class PigGame(activity: Activity) : Game(activity)
 {
     private var projection = Mat4f()
     override fun onViewChanged(width: Int, height: Int) {
-        MiseryJNI.setViewSize(width, height)
+        super.onViewChanged(width, height)
         projection = Mat4f.perspective(acos(0f), width.toFloat(), height.toFloat(), 0.1f, 1000f)
     }
 
