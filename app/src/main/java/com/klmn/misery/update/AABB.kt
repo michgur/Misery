@@ -3,6 +3,7 @@ package com.klmn.misery.update
 import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.jni.NativeComponent
 import com.klmn.misery.jni.NativeVec3fDelegate
+import com.klmn.misery.math.ImmutableVec3f
 import com.klmn.misery.math.Mat4f
 import com.klmn.misery.math.Quaternion
 import com.klmn.misery.math.Vec3f
@@ -16,12 +17,12 @@ class AABB : NativeComponent {
     constructor(min: Vec3f = Vec3f(), max: Vec3f = Vec3f()) {
         this.pointer = 0
         this.native = false
-        this.min = min
-        this.max = max
+        this.min = min.toImmutable()
+        this.max = max.toImmutable()
     }
 
-    var min : Vec3f by NativeVec3fDelegate(0)
-    var max : Vec3f by NativeVec3fDelegate(3)
+    var min : ImmutableVec3f by NativeVec3fDelegate(0)
+    var max : ImmutableVec3f by NativeVec3fDelegate(3)
 
     inline var center
         get() = (max + min) / 2f
@@ -44,6 +45,9 @@ class AABB : NativeComponent {
     infix fun intersects(other: AABB) = !(min.x > other.max.x || max.x < other.min.x || min.y > other.max.y ||
             max.y < other.min.y || min.z > other.max.z || max.z < other.min.z)
 
+    operator fun contains(vec3f: ImmutableVec3f) =
+            vec3f.x <= min.x && vec3f.y <= min.y && vec3f.z <= min.z &&
+                    vec3f.x <= max.x && vec3f.y <= max.y && vec3f.z <= max.z
     operator fun contains(vec3f: Vec3f) =
         vec3f.x <= min.x && vec3f.y <= min.y && vec3f.z <= min.z &&
         vec3f.x <= max.x && vec3f.y <= max.y && vec3f.z <= max.z
