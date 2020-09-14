@@ -4,7 +4,7 @@ add_library( misery-native-lib SHARED
         ECS.cpp
         Transform.cpp
         assets.cpp
-        RenderContext.cpp
+        RenderEngine.cpp
         interaction.cpp
         colliders.cpp
         physics.cpp

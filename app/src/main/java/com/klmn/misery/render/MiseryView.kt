@@ -37,8 +37,6 @@ class MiseryView(val game: Game) : GLSurfaceView(game.activity), GLSurfaceView.R
         setEGLContextClientVersion(3)
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
         setRenderer(this)
-
-        MiseryJNI.startThread()
     }
 
     private val FRAME_CAP = 60;

@@ -11,12 +11,13 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 #include <android/log.h>
+#include <android/native_window_jni.h>
 #include <GLES3/gl3.h>
 #include "logging.h"
 #include "ECS.h"
 #include "Transform.h"
 #include "assets.h"
-#include "RenderContext.h"
+#include "RenderEngine.h"
 #include "interaction.h"
 #include "physics.h"
 
@@ -204,13 +205,15 @@ Java_com_klmn_misery_jni_MiseryJNI_getComponentPointer(JNIEnv *env, jobject thiz
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_putMotionComponent(JNIEnv *env, jobject thiz, jint entity,
-                                                      jfloatArray motion) {
+Java_com_klmn_misery_jni_MiseryJNI_putMotionComponent(JNIEnv *env, jobject thiz, jint entity, jfloatArray motion) {
     Motion component;
     env->GetFloatArrayRegion(motion, 0, 6, component.data);
     Misery::ecs.putComponent(entity, "motion", component);
-}extern "C"
-JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_startThread(JNIEnv *env, jobject thiz) {
-    startRenderEngine();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_startThread(JNIEnv *env, jobject thiz, jobject assetManager, jobject window) {
+    ANativeWindow* w = ANativeWindow_fromSurface(env, window);
+    AAssetManager* a = AAssetManager_fromJava(env, assetManager);
+    startRenderEngine(w, a);
 }

@@ -3,6 +3,7 @@ package com.klmn.misery.render
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.view.TextureView
+import javax.microedition.khronos.egl.EGLContext
 
 class MiseryTextureView(context: Context) : TextureView(context), TextureView.SurfaceTextureListener {
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
