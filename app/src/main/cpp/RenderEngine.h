@@ -10,28 +10,16 @@
 #include <android/native_window.h>
 #include <EGL/egl.h>
 #include <android/asset_manager.h>
+#include <queue>
+#include <future>
+#include <android/surface_texture.h>
 #include "ECS.h"
 
 /** This class is responsible for rendering all of the entities.
  * It runs on a separate thread which also hosts an OpenGL context.
  * It also is responsible for loading assets that require OpenGL to be loaded */
-struct RenderEngine {
-    uint FRAME_CAP = 60;
-    uint width = 0, height = 0;
-    matrix4f projection;
-    Transform camera;
-
-    void (*render)(uint, float);
-    void setViewSize(uint w, uint h);
-
-    void start(AAssetManager* assetManager, ANativeWindow* window);
-    void kill();
-
-    uint createShaderProgram(const char* vertexAsset, const char* fragmentAsset);
-    uint loadMesh(const char* asset);
-    uint loadTexture(const char* asset);
-
-private:
+class RenderEngine {
+    pthread_t thread;
     AAssetManager* assetManager;
     ANativeWindow* window;
     EGLContext context;
@@ -42,10 +30,22 @@ private:
 
     void renderThread();
     static void* renderThread(void* ths);
+
+public:
+    inline RenderEngine(void (*render)(uint, float)) : render(render) {}
+
+    uint FRAME_CAP = 60;
+    uint width = 0, height = 0;
+    matrix4f projection;
+    Transform camera;
+
+    void (*render)(uint, float);
+    void setViewSize(uint w, uint h);
+
+    void start(AAssetManager* assetManager, ANativeWindow* window);
+    void kill();
 };
 
 namespace Misery { extern RenderEngine renderContext; }
-
-void startRenderEngine(ANativeWindow* window, AAssetManager* assetManager);
 
 #endif //MISERY_RENDERENGINE_H

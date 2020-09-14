@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Bundle
 import com.klmn.misery.examples.FlappyPig
 import com.klmn.misery.jni.MiseryJNI
+import com.klmn.misery.render.MiseryTextureView
 import com.klmn.misery.render.MiseryView
 
 /**
@@ -14,11 +15,10 @@ class Misery : Activity()
 {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        println("hi")
 
-        val view = MiseryView(FlappyPig(this))
+        val view = MiseryTextureView(this)
         setContentView(view)
-
-        MiseryJNI.setNativeAssetManager(assets)
     }
 
     override fun onDestroy() {

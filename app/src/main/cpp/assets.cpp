@@ -144,3 +144,16 @@ uint Misery::createShaderProgram(const char* vertex, const char* fragment) {
     glUseProgram(0);
     return id;
 }
+
+//void AssetLoader::load() {
+//    for (uint i = 0; i < tasks.size(); i++) {
+//        LoadTask& task = tasks.front();
+//        switch (task.type) {
+//            case 1: loadMesh(task); break;
+//            case 2: loadShader(task); break;
+//            case 3: loadTexture(task); break;
+//        }
+//        tasks.pop();
+//    }
+//}
+

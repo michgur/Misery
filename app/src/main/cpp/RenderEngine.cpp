@@ -8,7 +8,10 @@
 #include <ctime>
 #include <EGL/egl.h>
 #include <android/native_window.h>
+#include <android/native_window_jni.h>
 #include "assets.h"
+
+#define SECOND 1000000000L
 
 void render(uint entity, float delta) {
     uint material = *Misery::ecs.getComponent<uint>(entity, "material");
@@ -42,12 +45,14 @@ void RenderEngine::setViewSize(uint w, uint h) {
     projection = Misery::createProjectionMatrix(std::acos(0), width, height, 0.1, 1000);
 }
 
+namespace Misery { RenderEngine renderContext(render); }
+
 void RenderEngine::createEGLContext() {
     display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    ASSERT(display, "could not get EGL display! error %i", eglGetError());
+    ASSERT(display, "could not get EGL display! error 0x%04x", eglGetError());
 
     int v_major, v_minor;
-    ASSERT(eglInitialize(display, &v_major, &v_minor), "could not initialize EGL! error %i", eglGetError());
+    ASSERT(eglInitialize(display, &v_major, &v_minor), "could not initialize EGL! error 0x%04x", eglGetError());
 
     int config_attribs[] = {
             EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
@@ -58,17 +63,17 @@ void RenderEngine::createEGLContext() {
     int num_configs = 0;
     EGLConfig config = nullptr;
     ASSERT(eglChooseConfig(display, config_attribs, &config, 1, &num_configs) || num_configs,
-           "could not choose EGL configuration! error %i", eglGetError());
+           "could not choose EGL configuration! error 0x%04x", eglGetError());
 
-    int context_attribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3 };
+    int context_attribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
     context = eglCreateContext(display, config, EGL_NO_CONTEXT, context_attribs);
     int err = eglGetError();
-    ASSERT(err == EGL_SUCCESS, "could not create EGL context! error %i", err);
+    ASSERT(err == EGL_SUCCESS, "could not create EGL context! error 0x%04x", err);
 
     surface = eglCreateWindowSurface(display, config, window, nullptr);
-    ASSERT(surface, "could not create EGL surface! error %i", eglGetError());
+    ASSERT(surface, "could not create EGL surface! error 0x%04x", eglGetError());
 
-    ASSERT(eglMakeCurrent(display, surface, surface, context), "EGL make current failed! error %i", eglGetError());
+    ASSERT(eglMakeCurrent(display, surface, surface, context), "EGL make current failed! error 0x%04x", eglGetError());
 }
 void RenderEngine::initOpenGL() {
     glFrontFace(GL_CW);
@@ -76,14 +81,26 @@ void RenderEngine::initOpenGL() {
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
-    glClearColor(0, 0, 0, 1);
+    glClearColor(1, 0, 1, 1);
 }
 
+inline void clock_gettimediff(clockid_t clockid, timespec* now, timespec* diff) {
+    timespec from { now->tv_sec, now->tv_nsec };
+    clock_gettime(clockid, now);
+
+    long ndiff = now->tv_nsec - from.tv_nsec;
+    if (ndiff >= 0) {
+        diff->tv_nsec = ndiff;
+        diff->tv_sec = now->tv_sec - from.tv_sec;
+    } else {
+        diff->tv_nsec = ndiff + SECOND;
+        diff->tv_sec = now->tv_sec - from.tv_sec - 1;
+    }
+}
 void RenderEngine::renderThread() {
     createEGLContext();
     initOpenGL();
 
-#define SECOND 1000000000L
     timespec last {};
     long timer = 0L;
     long frameTime = SECOND / FRAME_CAP;
@@ -94,35 +111,39 @@ void RenderEngine::renderThread() {
         // validate EGL context
         if(context != eglGetCurrentContext() || surface != eglGetCurrentSurface(EGL_DRAW)) {
             int err = eglGetError();
-            if (err != EGL_SUCCESS) LOGE("EGL context / surface not current. error %i", err);
+            if (err != EGL_SUCCESS) LOGE("EGL context / surface not current. error 0x%04x", err);
             LOGI("trying to make current EGL context");
-            ASSERT(eglMakeCurrent(display, surface, surface, context), "EGL make current failed! error %i", eglGetError());
+            ASSERT(eglMakeCurrent(display, surface, surface, context), "EGL make current failed! error 0x%04x", eglGetError());
         }
 
         // wait for frame
-        timespec now {};
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now);
         if (timer >= SECOND) {
             LOGI("fps: %i", fps);
             fps = 0;
             timer = 0;
         }
-        timespec diff { now.tv_sec - last.tv_sec, now.tv_nsec - last.tv_nsec };
-        if (diff.tv_nsec < frameTime || diff.tv_sec > 0) {
-            nanosleep(&diff, nullptr);
-            clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now);
+        timespec diff {};
+        clock_gettimediff(CLOCK_THREAD_CPUTIME_ID, &last, &diff);
+        if (diff.tv_nsec < frameTime) {
+            timespec rest { 0, frameTime - diff.tv_nsec };
+            timespec rem {};
+            LOGI("%lu %i", rest.tv_nsec, nanosleep(&rest, &rem));
+            clock_gettimediff(CLOCK_THREAD_CPUTIME_ID, &last, &rest);
+            LOGI("frameTime: %lu, diff: %lu, rest: %lu, diff+rest: %lu, rem: %lu",
+                    frameTime, diff.tv_nsec, rest.tv_nsec, diff.tv_nsec + rest.tv_nsec, rem.tv_nsec);
+            diff.tv_sec += rest.tv_sec;
+            diff.tv_nsec += rest.tv_nsec;
         }
 
         // draw
         glClear(GL_DEPTH_BUFFER_BIT + GL_COLOR_BUFFER_BIT);
 
         // swap buffers
-        ASSERT(eglSwapBuffers(display, surface), "could not swap buffers! error %i", eglGetError());
+        ASSERT(eglSwapBuffers(display, surface), "could not swap buffers! error 0x%04x", eglGetError());
 
-        // update times
+        // count frames
         fps++;
-        timer += diff.tv_nsec;
-        last = now;
+        timer += diff.tv_nsec + SECOND * diff.tv_sec;
     }
 
     ANativeWindow_release(window);
@@ -131,11 +152,15 @@ void RenderEngine::renderThread() {
 void RenderEngine::start(AAssetManager* am, ANativeWindow* win) {
     this->assetManager = am;
     this->window = win;
-    pthread_t thread;
     pthread_create(&thread, nullptr, RenderEngine::renderThread, this);
 }
 
 void* RenderEngine::renderThread(void *ths) {
     ((RenderEngine*) ths)->renderThread();
     pthread_exit(nullptr);
+}
+
+void RenderEngine::kill() {
+    pthread_kill(thread, 0);
+    ANativeWindow_release(window);
 }

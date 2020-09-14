@@ -1,9 +1,8 @@
 package com.klmn.misery.jni
 
 import android.content.res.AssetManager
-import android.graphics.SurfaceTexture
+import android.view.Surface
 import com.klmn.misery.update.Entity
-import java.lang.System
 
 object MiseryJNI
 {
@@ -44,5 +43,5 @@ object MiseryJNI
     external fun getCameraTransform(): Long
     external fun setViewSize(width: Int, height: Int)
 
-    external fun startThread(assets: AssetManager, window: SurfaceTexture)
+    external fun startThread(assets: AssetManager, window: Surface)
 }

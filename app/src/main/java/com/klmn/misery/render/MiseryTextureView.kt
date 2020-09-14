@@ -2,12 +2,16 @@ package com.klmn.misery.render
 
 import android.content.Context
 import android.graphics.SurfaceTexture
+import android.view.Surface
 import android.view.TextureView
-import javax.microedition.khronos.egl.EGLContext
+import com.klmn.misery.jni.MiseryJNI
 
 class MiseryTextureView(context: Context) : TextureView(context), TextureView.SurfaceTextureListener {
+    init { surfaceTextureListener = this }
+
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
         // start game (only render?) thread
+        MiseryJNI.startThread(context.assets, Surface(surface))
     }
 
     override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
