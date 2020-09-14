@@ -42,4 +42,6 @@ object MiseryJNI
 
     external fun getCameraTransform(): Long
     external fun setViewSize(width: Int, height: Int)
+
+    external fun startThread()
 }

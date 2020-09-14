@@ -4,6 +4,7 @@
 
 #include "RenderContext.h"
 #include <GLES3/gl3.h>
+#include <pthread.h>
 #include "assets.h"
 
 void render(uint entity, float delta) {
@@ -38,4 +39,14 @@ void RenderContext::setViewSize(uint w, uint h) {
     height = h;
 
     projection = Misery::createProjectionMatrix(std::acos(0), width, height, 0.1, 1000);
+}
+
+void* renderThread(void*) {
+    for (uint i = 0; i < 10; i++) LOGI("poop");
+    pthread_exit(nullptr);
+}
+
+void startRenderEngine() {
+    pthread_t thread;
+    pthread_create(&thread, nullptr, renderThread, nullptr);
 }

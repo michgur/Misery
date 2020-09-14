@@ -34,26 +34,27 @@ class FlappyPig(activity: Activity) : Game(activity) {
 
     private object Render {
         val shader: Shader by lazy { Shader("vertex.glsl", "fragment.glsl") }
-        val cubeMesh: Mesh by lazy { Mesh("pig.obj") }
+        val cubeMesh: Mesh by lazy { Mesh("cube.obj") }
     }
     private fun createPlayer() = Entity (
-            "mesh" to Render.cubeMesh,
+            "mesh" to Mesh("pig.obj"),
             "material" to Material(
                     shader = Render.shader,
                     diffuse = Texture(activity.assets, "pig.png")
             ),
             "transform" to Transform(
-                    translation = Vec3f.BACK * 18f,
-                    rotation = Quaternion.rotation(Vec3f.UP, 1.5f)
+                    translation = Vec3f.BACK * 15f,
+                    rotation = Quaternion.rotation(Vec3f.UP, -.6f),
+                    scale = Vec3f(.05f)
             ),
             "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
             "motion" to Motion(),
             "controls" to TouchControls(
                     MotionEvent.ACTION_DOWN to { event ->
                         if (speed == 0f) {
-                            this["transform", Transform::class]!!.translation = ImmutableVec3f.BACK * 18f
+                            this["transform", Transform::class]!!.translation = ImmutableVec3f.BACK * 10f
 
-                            createPillar()
+//                            createPillar()
                             speed = 3f
                         }
                         else this["motion", Motion::class]!!.acceleration = ImmutableVec3f.UP * 45f
@@ -106,6 +107,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
             val motion = entity["motion", Motion::class]!!
             val transform = entity["transform", Transform::class]!!
             motion.acceleration += gravity * speed * delta
+            transform.rotation = (transform.rotation * Quaternion.rotation(Vec3f.UP, delta)).normalized
 
             if (transform.translation.y > 25) motion.acceleration *= -1f // hit ceiling
             if (transform.translation.y < -15) speed = 0f

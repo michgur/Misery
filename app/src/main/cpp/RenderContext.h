@@ -20,4 +20,6 @@ struct RenderContext {
 
 namespace Misery { extern RenderContext renderContext; }
 
+void startRenderEngine();
+
 #endif //MISERY_RENDERCONTEXT_H

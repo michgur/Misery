@@ -20,24 +20,22 @@
 #include "interaction.h"
 #include "physics.h"
 
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz,
-                                                                 jobject asset_manager) {
+/** pass a java reference for the app's assetManager */
+extern "C" JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz, jobject asset_manager) {
     Misery::assetManager = AAssetManager_fromJava(env, asset_manager);
 
+    /** initialize render engine */
     const char* types[] = { "transform", "mesh", "material" };
     Misery::ecs.addSystem(Misery::renderContext.render, 3, types);
+    /** initialize physics engine */
     const char* motionTypes[] = { "transform", "motion" };
     Misery::ecs.addSystem(motionSystem, 2, motionTypes);
 }
 
-
-extern "C"
-JNIEXPORT jlong JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz,
-                                                  jstring file, jstring ext) {
+/** load a mesh asset and return a pointer to its data */
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz, jstring file, jstring ext) {
     const char* fileString = env->GetStringUTFChars(file, nullptr);
     const char* extString = env->GetStringUTFChars(ext, nullptr);
     Misery::Mesh* mesh = Misery::loadMeshFromAsset(fileString, extString);
@@ -46,19 +44,17 @@ Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz,
     return (long) mesh;
 }
 
-extern "C"
-JNIEXPORT void JNICALL
+/** draw a mesh pointer refers to */
+extern "C" JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_drawMesh(JNIEnv *env, jobject thiz, jlong pointer) {
     glBindVertexArray(((Misery::Mesh*) pointer)->vao);
     glDrawElements(GL_TRIANGLES, ((Misery::Mesh*) pointer)->size, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
 
-extern "C"
-JNIEXPORT jint JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_createProgram(JNIEnv *env, jobject thiz,
-                                                         jstring vertex_file,
-                                                         jstring fragment_file) {
+/** create a shader program with vertex / fragment shader file assets */
+extern "C" JNIEXPORT jint JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_createProgram(JNIEnv *env, jobject thiz, jstring vertex_file, jstring fragment_file) {
     const char* vertexFileName = env->GetStringUTFChars(vertex_file, nullptr);
     const char* fragmentFileName = env->GetStringUTFChars(fragment_file, nullptr);
     uint id = Misery::createShaderProgram(vertexFileName, fragmentFileName);
@@ -213,4 +209,8 @@ Java_com_klmn_misery_jni_MiseryJNI_putMotionComponent(JNIEnv *env, jobject thiz,
     Motion component;
     env->GetFloatArrayRegion(motion, 0, 6, component.data);
     Misery::ecs.putComponent(entity, "motion", component);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_startThread(JNIEnv *env, jobject thiz) {
+    startRenderEngine();
 }

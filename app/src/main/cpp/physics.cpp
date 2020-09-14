@@ -3,6 +3,7 @@
 //
 
 #include "physics.h"
+#include <pthread.h>
 
 float coefficient = 1.0f / (2.0f - std::pow(2.0f, 1.0f / 3.0f));
 float complement = 1.0f - 2.0f * coefficient;
