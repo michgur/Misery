@@ -11,8 +11,8 @@
 
 namespace Misery { AAssetManager* assetManager; }
 
-inline aiMesh* openMesh(const char* asset, const char* ext) {
-    AAsset* mesh = AAssetManager_open(Misery::assetManager, asset, AASSET_MODE_BUFFER);
+inline aiMesh* openMesh(AAssetManager* assetManager, const char* asset, const char* ext) {
+    AAsset* mesh = AAssetManager_open(assetManager, asset, AASSET_MODE_BUFFER);
     ASSERT(mesh, "could not open asset %s", asset);
     long length = AAsset_getLength(mesh);
     const void* buffer = AAsset_getBuffer(mesh);
@@ -90,20 +90,20 @@ inline uint createVAO(uint* indices, uint indicesSize, float* vertices, uint ver
 
     return buffers[0];
 }
-Misery::Mesh* Misery::loadMeshFromAsset(const char* asset, const char* ext) {
-    aiMesh* mesh = openMesh(asset, ext);
-    uint indices[mesh->mNumFaces * 3];
-    float vertices[mesh->mNumVertices * VERTEX_SIZE];
+//Misery::Mesh* Misery::loadMeshFromAsset(const char* asset, const char* ext) {
+//    aiMesh* mesh = openMesh(asset, ext);
+//    uint indices[mesh->mNumFaces * 3];
+//    float vertices[mesh->mNumVertices * VERTEX_SIZE];
+//
+//    loadIndices(mesh, indices);
+//    loadVertices(mesh, vertices);
+//    uint vao = createVAO(indices, sizeof(indices), vertices, sizeof(vertices));
+//
+//    return new Misery::Mesh { vao, (GLuint) (mesh->mNumFaces * 3) };
+//}
 
-    loadIndices(mesh, indices);
-    loadVertices(mesh, vertices);
-    uint vao = createVAO(indices, sizeof(indices), vertices, sizeof(vertices));
-
-    return new Misery::Mesh { vao, (GLuint) (mesh->mNumFaces * 3) };
-}
-
-void openAndAddShader(int program, const char* fileName, int type) {
-    AAsset* asset = AAssetManager_open(Misery::assetManager, fileName, AASSET_MODE_BUFFER);
+void openAndAddShader(AAssetManager* assetManager, int program, const char* fileName, int type) {
+    AAsset* asset = AAssetManager_open(assetManager, fileName, AASSET_MODE_BUFFER);
     const char* source = (const char*) AAsset_getBuffer(asset);
     int length = AAsset_getLength(asset);
 
@@ -123,13 +123,67 @@ void openAndAddShader(int program, const char* fileName, int type) {
 
     glAttachShader(program, shader);
 }
-uint Misery::createShaderProgram(const char* vertex, const char* fragment) {
+//uint Misery::createShaderProgram(const char* vertex, const char* fragment) {
+//    GLuint id = glCreateProgram();
+//    ASSERT(id, "GLES could not create shader program");
+//    glUseProgram(id);
+//
+//    openAndAddShader(id, vertex, GL_VERTEX_SHADER);
+//    openAndAddShader(id, fragment, GL_FRAGMENT_SHADER);
+//
+//    glLinkProgram(id);
+//    glValidateProgram(id);
+//
+//    int logLength;
+//    glGetProgramiv(id, GL_INFO_LOG_LENGTH, &logLength);
+//    char* log = new char[logLength];
+//    glGetProgramInfoLog(id, logLength, nullptr, log);
+//    LOGI("%s", log);
+//    delete[] log;
+//
+//    glUseProgram(0);
+//    return id;
+//}
+
+void AssetLoader::load() {
+    while (!tasks.empty()) {
+        LoadTask& task = tasks.front();
+        switch (task.type) {
+            case 1: loadMesh(task); break;
+            case 2: loadShader(task); break;
+            case 3: loadTexture(task); break;
+        }
+        delete task.asset;
+        tasks.pop();
+    }
+}
+
+void AssetLoader::loadMesh(AssetLoader::LoadTask &task) {
+    // find file extension for assimp
+    std::string ext(*task.asset);
+    ext = ext.substr(ext.find_last_of('.') + 1);
+    // open asset with assetManager & assimp
+    aiMesh* mesh = openMesh(assetManager, task.asset->c_str(), ext.c_str());
+    uint indices[mesh->mNumFaces * 3];
+    float vertices[mesh->mNumVertices * VERTEX_SIZE];
+
+    // move mesh data from aiMesh to buffers
+    loadIndices(mesh, indices);
+    loadVertices(mesh, vertices);
+    uint vao = createVAO(indices, sizeof(indices), vertices, sizeof(vertices));
+
+    // todo: figure out how to pass the size
+    task.id_promise.set_value(vao);
+    LOGI("%i", vao);
+}
+
+void AssetLoader::loadShader(AssetLoader::LoadTask &task) {
     GLuint id = glCreateProgram();
     ASSERT(id, "GLES could not create shader program");
     glUseProgram(id);
 
-    openAndAddShader(id, vertex, GL_VERTEX_SHADER);
-    openAndAddShader(id, fragment, GL_FRAGMENT_SHADER);
+    openAndAddShader(assetManager, id, task.asset[0].c_str(), GL_VERTEX_SHADER);
+    openAndAddShader(assetManager, id, task.asset[1].c_str(), GL_FRAGMENT_SHADER);
 
     glLinkProgram(id);
     glValidateProgram(id);
@@ -142,18 +196,21 @@ uint Misery::createShaderProgram(const char* vertex, const char* fragment) {
     delete[] log;
 
     glUseProgram(0);
-    return id;
+    task.id_promise.set_value(id);
+    LOGI("%i", id);
 }
 
-//void AssetLoader::load() {
-//    for (uint i = 0; i < tasks.size(); i++) {
-//        LoadTask& task = tasks.front();
-//        switch (task.type) {
-//            case 1: loadMesh(task); break;
-//            case 2: loadShader(task); break;
-//            case 3: loadTexture(task); break;
-//        }
-//        tasks.pop();
-//    }
-//}
+void AssetLoader::loadTexture(AssetLoader::LoadTask &task) {
+    AAsset* asset = AAssetManager_open(assetManager, task.asset->c_str(), AASSET_MODE_BUFFER);
+    const void* buffer = AAsset_getBuffer(asset);
 
+    GLuint id;
+    glGenTextures(1, &id);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//    glTexImage2D(GL_TEXTURE_2D, 0, );
+}

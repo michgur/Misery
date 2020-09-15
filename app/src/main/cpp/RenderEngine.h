@@ -14,13 +14,13 @@
 #include <future>
 #include <android/surface_texture.h>
 #include "ECS.h"
+#include "assets.h"
 
 /** This class is responsible for rendering all of the entities.
  * It runs on a separate thread which also hosts an OpenGL context.
  * It also is responsible for loading assets that require OpenGL to be loaded */
 class RenderEngine {
     pthread_t thread;
-    AAssetManager* assetManager;
     ANativeWindow* window;
     EGLContext context;
     EGLSurface surface;
@@ -34,10 +34,11 @@ class RenderEngine {
 public:
     inline RenderEngine(void (*render)(uint, float)) : render(render) {}
 
-    uint FRAME_CAP = 60;
+    uint FRAME_CAP = 30;
     uint width = 0, height = 0;
     matrix4f projection;
     Transform camera;
+    AssetLoader assetLoader;
 
     void (*render)(uint, float);
     void setViewSize(uint w, uint h);

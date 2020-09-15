@@ -9,6 +9,7 @@
 #include <EGL/egl.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+#include <unistd.h>
 #include "assets.h"
 
 #define SECOND 1000000000L
@@ -106,6 +107,9 @@ void RenderEngine::renderThread() {
     long frameTime = SECOND / FRAME_CAP;
     uint fps = 0;
 
+    assetLoader.loadMesh("pig.obj");
+    assetLoader.loadShader("vertex.glsl", "fragment.glsl");
+
     // render loop
     while (true) {
         // validate EGL context
@@ -123,17 +127,17 @@ void RenderEngine::renderThread() {
             timer = 0;
         }
         timespec diff {};
-        clock_gettimediff(CLOCK_THREAD_CPUTIME_ID, &last, &diff);
+        clock_gettimediff(CLOCK_MONOTONIC, &last, &diff);
         if (diff.tv_nsec < frameTime) {
             timespec rest { 0, frameTime - diff.tv_nsec };
-            timespec rem {};
-            LOGI("%lu %i", rest.tv_nsec, nanosleep(&rest, &rem));
-            clock_gettimediff(CLOCK_THREAD_CPUTIME_ID, &last, &rest);
-            LOGI("frameTime: %lu, diff: %lu, rest: %lu, diff+rest: %lu, rem: %lu",
-                    frameTime, diff.tv_nsec, rest.tv_nsec, diff.tv_nsec + rest.tv_nsec, rem.tv_nsec);
+            while(nanosleep(&rest, &rest));
+            clock_gettimediff(CLOCK_MONOTONIC, &last, &rest);
             diff.tv_sec += rest.tv_sec;
             diff.tv_nsec += rest.tv_nsec;
         }
+
+        // load assets
+        assetLoader.load();
 
         // draw
         glClear(GL_DEPTH_BUFFER_BIT + GL_COLOR_BUFFER_BIT);
@@ -150,7 +154,7 @@ void RenderEngine::renderThread() {
 }
 
 void RenderEngine::start(AAssetManager* am, ANativeWindow* win) {
-    this->assetManager = am;
+    this->assetLoader.setAssetManager(am);
     this->window = win;
     pthread_create(&thread, nullptr, RenderEngine::renderThread, this);
 }

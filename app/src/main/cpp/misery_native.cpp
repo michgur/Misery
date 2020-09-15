@@ -39,10 +39,10 @@ extern "C" JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz, jstring file, jstring ext) {
     const char* fileString = env->GetStringUTFChars(file, nullptr);
     const char* extString = env->GetStringUTFChars(ext, nullptr);
-    Misery::Mesh* mesh = Misery::loadMeshFromAsset(fileString, extString);
+    std::promise<uint>& id = Misery::renderContext.assetLoader.loadShader(fileString, extString);
     env->ReleaseStringUTFChars(file, fileString);
     env->ReleaseStringUTFChars(ext, extString);
-    return (long) mesh;
+    return (long) &id;
 }
 
 /** draw a mesh pointer refers to */
@@ -58,10 +58,10 @@ extern "C" JNIEXPORT jint JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_createProgram(JNIEnv *env, jobject thiz, jstring vertex_file, jstring fragment_file) {
     const char* vertexFileName = env->GetStringUTFChars(vertex_file, nullptr);
     const char* fragmentFileName = env->GetStringUTFChars(fragment_file, nullptr);
-    uint id = Misery::createShaderProgram(vertexFileName, fragmentFileName);
+    std::promise<uint>& id = Misery::renderContext.assetLoader.loadShader(vertexFileName, fragmentFileName);
     env->ReleaseStringUTFChars(vertex_file, vertexFileName);
     env->ReleaseStringUTFChars(fragment_file, fragmentFileName);
-    return id;
+    return (long) &id;
 }
 extern "C"
 JNIEXPORT jint JNICALL
