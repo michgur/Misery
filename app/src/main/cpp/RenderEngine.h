@@ -38,7 +38,7 @@ public:
     uint width = 0, height = 0;
     matrix4f projection;
     Transform camera;
-    AssetLoader assetLoader;
+    AssetLoader assetLoader {};
 
     void (*render)(uint, float);
     void setViewSize(uint w, uint h);

@@ -1,6 +1,7 @@
 package com.klmn.misery.jni
 
 import android.content.res.AssetManager
+import android.graphics.Bitmap
 import android.view.Surface
 import com.klmn.misery.update.Entity
 
@@ -12,6 +13,7 @@ object MiseryJNI
     external fun loadMesh(file: String, ext: String): Long
     external fun drawMesh(pointer: Long)
     external fun createProgram(vertexFile: String, fragmentFile: String): Int
+//    external fun loadTexture(texture: Bitmap): Long
 
     external fun updateECS(delta: Float)
     external fun clearECS()

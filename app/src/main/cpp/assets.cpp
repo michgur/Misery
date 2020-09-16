@@ -158,7 +158,7 @@ void AssetLoader::load() {
     }
 }
 
-void AssetLoader::loadMesh(AssetLoader::LoadTask &task) {
+void AssetLoader::loadMesh(AssetLoader::LoadTask &task) const {
     // find file extension for assimp
     std::string ext(*task.asset);
     ext = ext.substr(ext.find_last_of('.') + 1);
@@ -172,12 +172,11 @@ void AssetLoader::loadMesh(AssetLoader::LoadTask &task) {
     loadVertices(mesh, vertices);
     uint vao = createVAO(indices, sizeof(indices), vertices, sizeof(vertices));
 
-    // todo: figure out how to pass the size
-    task.id_promise.set_value(vao);
+    task.id_promise.set_value(new uint[] { vao, mesh->mNumFaces * 3 });
     LOGI("%i", vao);
 }
 
-void AssetLoader::loadShader(AssetLoader::LoadTask &task) {
+void AssetLoader::loadShader(AssetLoader::LoadTask &task) const {
     GLuint id = glCreateProgram();
     ASSERT(id, "GLES could not create shader program");
     glUseProgram(id);
@@ -196,11 +195,11 @@ void AssetLoader::loadShader(AssetLoader::LoadTask &task) {
     delete[] log;
 
     glUseProgram(0);
-    task.id_promise.set_value(id);
+    task.id_promise.set_value(new uint(id));
     LOGI("%i", id);
 }
 
-void AssetLoader::loadTexture(AssetLoader::LoadTask &task) {
+void AssetLoader::loadTexture(AssetLoader::LoadTask &task) const {
     AAsset* asset = AAssetManager_open(assetManager, task.asset->c_str(), AASSET_MODE_BUFFER);
     const void* buffer = AAsset_getBuffer(asset);
 

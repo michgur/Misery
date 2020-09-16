@@ -39,17 +39,18 @@ extern "C" JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz, jstring file, jstring ext) {
     const char* fileString = env->GetStringUTFChars(file, nullptr);
     const char* extString = env->GetStringUTFChars(ext, nullptr);
-    std::promise<uint>& id = Misery::renderContext.assetLoader.loadShader(fileString, extString);
+    auto* id = new AssetID(Misery::renderContext.assetLoader.loadShader(fileString, extString));
     env->ReleaseStringUTFChars(file, fileString);
     env->ReleaseStringUTFChars(ext, extString);
-    return (long) &id;
+    return (long) id;
 }
 
 /** draw a mesh pointer refers to */
 extern "C" JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_drawMesh(JNIEnv *env, jobject thiz, jlong pointer) {
-    glBindVertexArray(((Misery::Mesh*) pointer)->vao);
-    glDrawElements(GL_TRIANGLES, ((Misery::Mesh*) pointer)->size, GL_UNSIGNED_INT, nullptr);
+    uint* mesh = ((AssetID*) pointer)->get();
+    glBindVertexArray(mesh[0]);
+    glDrawElements(GL_TRIANGLES, mesh[1], GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
 
@@ -58,10 +59,10 @@ extern "C" JNIEXPORT jint JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_createProgram(JNIEnv *env, jobject thiz, jstring vertex_file, jstring fragment_file) {
     const char* vertexFileName = env->GetStringUTFChars(vertex_file, nullptr);
     const char* fragmentFileName = env->GetStringUTFChars(fragment_file, nullptr);
-    std::promise<uint>& id = Misery::renderContext.assetLoader.loadShader(vertexFileName, fragmentFileName);
+    auto* id = new AssetID(Misery::renderContext.assetLoader.loadShader(vertexFileName, fragmentFileName));
     env->ReleaseStringUTFChars(vertex_file, vertexFileName);
     env->ReleaseStringUTFChars(fragment_file, fragmentFileName);
-    return (long) &id;
+    return (long) id;
 }
 extern "C"
 JNIEXPORT jint JNICALL
@@ -203,8 +204,7 @@ Java_com_klmn_misery_jni_MiseryJNI_getComponentPointer(JNIEnv *env, jobject thiz
     env->ReleaseStringUTFChars(type, typeChars);
     return (long) result;
 }
-extern "C"
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_putMotionComponent(JNIEnv *env, jobject thiz, jint entity, jfloatArray motion) {
     Motion component;
     env->GetFloatArrayRegion(motion, 0, 6, component.data);

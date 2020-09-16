@@ -4,6 +4,7 @@ import com.klmn.misery.math.ImmutableQuaternion
 import com.klmn.misery.math.ImmutableVec3f
 import kotlin.reflect.KProperty
 
+// todo: try implementing these via bytebuffers, could possibly reduce JNI traffic?
 class NativeFloatDelegate(val offset: Int) {
     var value = 0f
     operator fun getValue(thisRef: NativeComponent, property: KProperty<*>) =

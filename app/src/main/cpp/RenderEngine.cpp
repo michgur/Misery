@@ -14,9 +14,9 @@
 
 #define SECOND 1000000000L
 
-void render(uint entity, float delta) {
+void render(uint entity, float) {
     uint material = *Misery::ecs.getComponent<uint>(entity, "material");
-    int shader = *Misery::ecs.getComponent<int>(material, "shader");
+    uint shader = *Misery::ecs.getComponent<AssetID>(material, "shader")->get();
     glUseProgram(shader);
 
     int mvp = glGetUniformLocation(shader, "mvp");
@@ -26,13 +26,13 @@ void render(uint entity, float delta) {
     m = Misery::renderContext.projection * (Misery::renderContext.camera.toMatrix() * m);
     glUniformMatrix4fv(mvp, 1, true, m[0]);
     glActiveTexture(GL_TEXTURE0);
-    uint texture = *Misery::ecs.getComponent<int>(material, "diffuse");
+    uint texture = *Misery::ecs.getComponent<AssetID>(material, "diffuse")->get();
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(diffuse, 0);
 
-    auto* mesh = (Misery::Mesh*) *Misery::ecs.getComponent<long>(entity, "mesh");
-    glBindVertexArray(mesh->vao);
-    glDrawElements(GL_TRIANGLES, mesh->size, GL_UNSIGNED_INT, nullptr);
+    uint* mesh = Misery::ecs.getComponent<AssetID>(entity, "mesh")->get();
+    glBindVertexArray(mesh[0]);
+    glDrawElements(GL_TRIANGLES, mesh[1], GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 
     glBindTexture(GL_TEXTURE_2D, 0);

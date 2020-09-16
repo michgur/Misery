@@ -15,7 +15,6 @@ class Misery : Activity()
 {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        println("hi")
 
         val view = MiseryTextureView(this)
         setContentView(view)
