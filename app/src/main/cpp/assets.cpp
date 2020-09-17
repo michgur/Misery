@@ -90,17 +90,6 @@ inline uint createVAO(uint* indices, uint indicesSize, float* vertices, uint ver
 
     return buffers[0];
 }
-//Misery::Mesh* Misery::loadMeshFromAsset(const char* asset, const char* ext) {
-//    aiMesh* mesh = openMesh(asset, ext);
-//    uint indices[mesh->mNumFaces * 3];
-//    float vertices[mesh->mNumVertices * VERTEX_SIZE];
-//
-//    loadIndices(mesh, indices);
-//    loadVertices(mesh, vertices);
-//    uint vao = createVAO(indices, sizeof(indices), vertices, sizeof(vertices));
-//
-//    return new Misery::Mesh { vao, (GLuint) (mesh->mNumFaces * 3) };
-//}
 
 void openAndAddShader(AAssetManager* assetManager, int program, const char* fileName, int type) {
     AAsset* asset = AAssetManager_open(assetManager, fileName, AASSET_MODE_BUFFER);
@@ -123,27 +112,6 @@ void openAndAddShader(AAssetManager* assetManager, int program, const char* file
 
     glAttachShader(program, shader);
 }
-//uint Misery::createShaderProgram(const char* vertex, const char* fragment) {
-//    GLuint id = glCreateProgram();
-//    ASSERT(id, "GLES could not create shader program");
-//    glUseProgram(id);
-//
-//    openAndAddShader(id, vertex, GL_VERTEX_SHADER);
-//    openAndAddShader(id, fragment, GL_FRAGMENT_SHADER);
-//
-//    glLinkProgram(id);
-//    glValidateProgram(id);
-//
-//    int logLength;
-//    glGetProgramiv(id, GL_INFO_LOG_LENGTH, &logLength);
-//    char* log = new char[logLength];
-//    glGetProgramInfoLog(id, logLength, nullptr, log);
-//    LOGI("%s", log);
-//    delete[] log;
-//
-//    glUseProgram(0);
-//    return id;
-//}
 
 void AssetLoader::load() {
     while (!tasks.empty()) {
@@ -153,7 +121,6 @@ void AssetLoader::load() {
             case 2: loadShader(task); break;
             case 3: loadTexture(task); break;
         }
-        delete task.asset;
         tasks.pop();
     }
 }
@@ -173,7 +140,7 @@ void AssetLoader::loadMesh(AssetLoader::LoadTask &task) const {
     uint vao = createVAO(indices, sizeof(indices), vertices, sizeof(vertices));
 
     task.id_promise.set_value(new uint[] { vao, mesh->mNumFaces * 3 });
-    LOGI("%i", vao);
+    delete task.asset;
 }
 
 void AssetLoader::loadShader(AssetLoader::LoadTask &task) const {
@@ -196,13 +163,10 @@ void AssetLoader::loadShader(AssetLoader::LoadTask &task) const {
 
     glUseProgram(0);
     task.id_promise.set_value(new uint(id));
-    LOGI("%i", id);
+    delete task.asset;
 }
 
 void AssetLoader::loadTexture(AssetLoader::LoadTask &task) const {
-    AAsset* asset = AAssetManager_open(assetManager, task.asset->c_str(), AASSET_MODE_BUFFER);
-    const void* buffer = AAsset_getBuffer(asset);
-
     GLuint id;
     glGenTextures(1, &id);
 
@@ -211,5 +175,13 @@ void AssetLoader::loadTexture(AssetLoader::LoadTask &task) const {
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//    glTexImage2D(GL_TEXTURE_2D, 0, );
+    AndroidBitmapInfo& info = task.texture->first;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.width, info.height,
+            0, GL_RGBA, GL_UNSIGNED_BYTE, task.texture->second);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    task.id_promise.set_value(new uint(id));
+
+    std::free(task.texture->second);
+    delete task.texture;
 }

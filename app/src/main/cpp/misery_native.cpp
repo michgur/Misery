@@ -217,3 +217,8 @@ Java_com_klmn_misery_jni_MiseryJNI_startThread(JNIEnv *env, jobject thiz, jobjec
     AAssetManager* a = AAssetManager_fromJava(env, assetManager);
     Misery::renderContext.start(a, s);
 }
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_loadTexture(JNIEnv *env, jobject thiz, jobject texture) {
+    return (long) new AssetID(Misery::renderContext.assetLoader.loadTexture(env, texture));
+}

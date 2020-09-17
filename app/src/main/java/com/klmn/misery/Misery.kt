@@ -6,6 +6,7 @@ import com.klmn.misery.examples.FlappyPig
 import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.render.MiseryTextureView
 import com.klmn.misery.render.MiseryView
+import com.klmn.misery.render.Texture
 
 /**
  * ಠ^ಠ.
@@ -18,6 +19,8 @@ class Misery : Activity()
 
         val view = MiseryTextureView(this)
         setContentView(view)
+
+        Texture(assets, "pig.png")
     }
 
     override fun onDestroy() {
