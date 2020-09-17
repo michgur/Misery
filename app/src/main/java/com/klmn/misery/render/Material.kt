@@ -9,8 +9,8 @@ class Material(val data: Entity = Entity()) {
     }
 
     var shader: Shader
-        get() = Shader(data["shader", Int::class]!!)
-        set(value) { data["shader"] = value.id }
+        get() = Shader(data["shader", Long::class]!!)
+        set(value) { data["shader"] = value.pointer }
     var diffuse: Texture
         get() = Texture(data["diffuse", Long::class]!!)
         set(value) { data["diffuse"] = value.pointer }

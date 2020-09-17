@@ -10,9 +10,9 @@ object MiseryJNI
     init { System.loadLibrary("misery-native-lib") }
 
     external fun setNativeAssetManager(assetManager: AssetManager)
-    external fun loadMesh(file: String, ext: String): Long
+    external fun loadMesh(file: String): Long
     external fun drawMesh(pointer: Long)
-    external fun createProgram(vertexFile: String, fragmentFile: String): Int
+    external fun createProgram(vertexFile: String, fragmentFile: String): Long
     external fun loadTexture(texture: Bitmap): Long
 
     external fun updateECS(delta: Float)

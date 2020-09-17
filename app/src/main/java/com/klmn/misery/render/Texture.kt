@@ -12,14 +12,10 @@ import com.klmn.misery.jni.MiseryJNI
  * ಠ^ಠ.
  * Created by Michael on 12/28/2018.
  */
-class Texture
+class Texture(val pointer: Long)
 {
-    var pointer: Long = 0L
-
-    constructor(pointer: Long) { this.pointer = pointer }
     constructor(assets: AssetManager, path: String) : this(BitmapFactory.decodeStream(assets.open(path)))
-    constructor(bitmap: Bitmap) {
-        pointer = MiseryJNI.loadTexture(bitmap)
+    constructor(bitmap: Bitmap) : this(MiseryJNI.loadTexture(bitmap)) {
         bitmap.recycle()
     }
 

@@ -36,12 +36,10 @@ Java_com_klmn_misery_jni_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject th
 
 /** load a mesh asset and return a pointer to its data */
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz, jstring file, jstring ext) {
+Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz, jstring file) {
     const char* fileString = env->GetStringUTFChars(file, nullptr);
-    const char* extString = env->GetStringUTFChars(ext, nullptr);
-    auto* id = new AssetID(Misery::renderContext.assetLoader.loadShader(fileString, extString));
+    auto* id = new AssetID(Misery::renderContext.assetLoader.loadMesh(fileString));
     env->ReleaseStringUTFChars(file, fileString);
-    env->ReleaseStringUTFChars(ext, extString);
     return (long) id;
 }
 
@@ -55,7 +53,7 @@ Java_com_klmn_misery_jni_MiseryJNI_drawMesh(JNIEnv *env, jobject thiz, jlong poi
 }
 
 /** create a shader program with vertex / fragment shader file assets */
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_createProgram(JNIEnv *env, jobject thiz, jstring vertex_file, jstring fragment_file) {
     const char* vertexFileName = env->GetStringUTFChars(vertex_file, nullptr);
     const char* fragmentFileName = env->GetStringUTFChars(fragment_file, nullptr);

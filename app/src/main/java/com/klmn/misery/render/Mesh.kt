@@ -4,6 +4,6 @@ import com.klmn.misery.jni.MiseryJNI
 
 class Mesh(path: String)
 {
-    val pointer: Long = MiseryJNI.loadMesh(path, path.split(".").last())
+    val pointer: Long = MiseryJNI.loadMesh(path)
     fun draw() = MiseryJNI.drawMesh(pointer)
 }

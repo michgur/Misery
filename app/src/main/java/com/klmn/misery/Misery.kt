@@ -20,7 +20,7 @@ class Misery : Activity()
         val view = MiseryTextureView(this)
         setContentView(view)
 
-        Texture(assets, "pig.png")
+        FlappyPig(this).init()
     }
 
     override fun onDestroy() {

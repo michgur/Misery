@@ -107,9 +107,6 @@ void RenderEngine::renderThread() {
     long frameTime = SECOND / FRAME_CAP;
     uint fps = 0;
 
-    assetLoader.loadMesh("pig.obj");
-    assetLoader.loadShader("vertex.glsl", "fragment.glsl");
-
     // render loop
     while (true) {
         // validate EGL context

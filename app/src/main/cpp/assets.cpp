@@ -117,9 +117,9 @@ void AssetLoader::load() {
     while (!tasks.empty()) {
         LoadTask& task = tasks.front();
         switch (task.type) {
-            case 1: loadMesh(task); break;
-            case 2: loadShader(task); break;
-            case 3: loadTexture(task); break;
+            case MISERY_ASSET_MESH: loadMesh(task); break;
+            case MISERY_ASSET_SHADER: loadShader(task); break;
+            case MISERY_ASSET_TEXTURE: loadTexture(task); break;
         }
         tasks.pop();
     }
