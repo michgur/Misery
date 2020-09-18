@@ -14,20 +14,11 @@
 
 #define VERTEX_SIZE 11
 
-namespace Misery {
-    extern AAssetManager* assetManager;
-
-    struct Mesh { const GLuint vao, size; };
-//    Mesh* loadMeshFromAsset(const char* asset, const char* ext);
-
-//    uint createShaderProgram(const char* vertex, const char* fragment);
-}
-
 #define MISERY_ASSET_MESH 1
 #define MISERY_ASSET_SHADER 2
 #define MISERY_ASSET_TEXTURE 3
 
-typedef std::future<uint*> AssetID;
+typedef std::shared_future<uint*> AssetID;
 
 class AssetLoader {
     struct LoadTask {
@@ -41,6 +32,7 @@ class AssetLoader {
 
     AAssetManager* assetManager;
     std::queue<LoadTask> tasks = std::queue<LoadTask>();
+    std::queue<LoadTask> loaded = std::queue<LoadTask>();
 
     void loadMesh(LoadTask& task) const;
     void loadShader(LoadTask& task) const;
@@ -53,12 +45,12 @@ public:
 
     inline AssetID loadMesh(const char* asset) {
         tasks.push(LoadTask { new std::string(asset), std::promise<uint*>(), MISERY_ASSET_MESH });
-        return tasks.back().id_promise.get_future();
+        return AssetID(tasks.back().id_promise.get_future());
     }
     inline AssetID loadShader(const char* vertex, const char* fragment) {
         std::string* assets = new std::string[] { std::string(vertex), std::string(fragment) };
         tasks.push(LoadTask { assets , std::promise<uint*>(), MISERY_ASSET_SHADER });
-        return tasks.back().id_promise.get_future();
+        return AssetID(tasks.back().id_promise.get_future());
     }
 
     /** since native image decoding is only available since api level >= 30,
@@ -79,7 +71,7 @@ public:
         // only the RGBA_8888 android format is supported by OpenGL
         ASSERT(tasks.back().texture->first.format == ANDROID_BITMAP_FORMAT_RGBA_8888,
                 "unsupported texture format!");
-        return tasks.back().id_promise.get_future();
+        return AssetID(tasks.back().id_promise.get_future());
     }
 };
 

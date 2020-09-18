@@ -11,4 +11,4 @@ out vec4 fragmentColor;
 
 uniform sampler2D diffuse;
 
-void main() { fragmentColor = texture(diffuse, tex); }
+void main() { fragmentColor = vec4(1.0f); }

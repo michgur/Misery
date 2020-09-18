@@ -14,31 +14,6 @@
 
 #define SECOND 1000000000L
 
-void render(uint entity, float) {
-    uint material = *Misery::ecs.getComponent<uint>(entity, "material");
-    uint shader = *Misery::ecs.getComponent<AssetID>(material, "shader")->get();
-    glUseProgram(shader);
-
-    int mvp = glGetUniformLocation(shader, "mvp");
-    int diffuse = glGetUniformLocation(shader, "diffuse");
-
-    matrix4f m = Misery::ecs.getComponent<Transform>(entity, "transform")->toMatrix();
-    m = Misery::renderContext.projection * (Misery::renderContext.camera.toMatrix() * m);
-    glUniformMatrix4fv(mvp, 1, true, m[0]);
-    glActiveTexture(GL_TEXTURE0);
-    uint texture = *Misery::ecs.getComponent<AssetID>(material, "diffuse")->get();
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(diffuse, 0);
-
-    uint* mesh = Misery::ecs.getComponent<AssetID>(entity, "mesh")->get();
-    glBindVertexArray(mesh[0]);
-    glDrawElements(GL_TRIANGLES, mesh[1], GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glUseProgram(0);
-}
-
 void RenderEngine::setViewSize(uint w, uint h) {
     width = w;
     height = h;
@@ -46,7 +21,7 @@ void RenderEngine::setViewSize(uint w, uint h) {
     projection = Misery::createProjectionMatrix(std::acos(0), width, height, 0.1, 1000);
 }
 
-namespace Misery { RenderEngine renderContext(render); }
+namespace Misery { RenderEngine renderContext(ecs); }
 
 void RenderEngine::createEGLContext() {
     display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -133,11 +108,13 @@ void RenderEngine::renderThread() {
             diff.tv_nsec += rest.tv_nsec;
         }
 
+        float delta = (float) diff.tv_nsec / SECOND + diff.tv_sec;
         // load assets
         assetLoader.load();
 
         // draw
         glClear(GL_DEPTH_BUFFER_BIT + GL_COLOR_BUFFER_BIT);
+        for (uint entity : entities) render(entity, delta);
 
         // swap buffers
         ASSERT(eglSwapBuffers(display, surface), "could not swap buffers! error 0x%04x", eglGetError());
@@ -164,4 +141,30 @@ void* RenderEngine::renderThread(void *ths) {
 void RenderEngine::kill() {
     pthread_kill(thread, 0);
     ANativeWindow_release(window);
+}
+
+void RenderEngine::render(uint entity, float) {
+    uint material = *ecs.getComponent<uint>(entity, "material");
+    auto id = *ecs.getComponent<AssetID*>(material, "shader");
+    uint shader = *id->get();
+    glUseProgram(shader);
+
+    int mvp = glGetUniformLocation(shader, "mvp");
+    int diffuse = glGetUniformLocation(shader, "diffuse");
+
+    matrix4f m = ecs.getComponent<Transform>(entity, "transform")->toMatrix();
+    m = projection * (camera.toMatrix() * m);
+    glUniformMatrix4fv(mvp, 1, true, m[0]);
+    glActiveTexture(GL_TEXTURE0);
+    uint texture = *(*ecs.getComponent<AssetID*>(material, "diffuse"))->get();
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(diffuse, 0);
+
+    uint* mesh = (*ecs.getComponent<AssetID*>(entity, "mesh"))->get();
+    glBindVertexArray(mesh[0]);
+    glDrawElements(GL_TRIANGLES, mesh[1], GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
 }

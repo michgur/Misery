@@ -9,8 +9,6 @@
 #include "logging.h"
 #include "assets.h"
 
-namespace Misery { AAssetManager* assetManager; }
-
 inline aiMesh* openMesh(AAssetManager* assetManager, const char* asset, const char* ext) {
     AAsset* mesh = AAssetManager_open(assetManager, asset, AASSET_MODE_BUFFER);
     ASSERT(mesh, "could not open asset %s", asset);
@@ -121,6 +119,8 @@ void AssetLoader::load() {
             case MISERY_ASSET_SHADER: loadShader(task); break;
             case MISERY_ASSET_TEXTURE: loadTexture(task); break;
         }
+        // todo figure out the promise shit
+        loaded.push(std::move(task));
         tasks.pop();
     }
 }
