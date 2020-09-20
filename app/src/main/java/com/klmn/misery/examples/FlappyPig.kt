@@ -13,7 +13,7 @@ import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
 
 class FlappyPig(activity: Activity) : Game(activity) {
-    var speed = 0f;
+    private var speed = 0f;
 
     private val pillar: Map<String, Any> by lazy { mapOf(
             "mesh" to Mesh("pillar.obj"),

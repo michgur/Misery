@@ -46,4 +46,6 @@ object MiseryJNI
     external fun setViewSize(width: Int, height: Int)
 
     external fun startThread(assets: AssetManager, window: Surface)
+
+    external fun loadAssetsAndRender(delta: Float)
 }

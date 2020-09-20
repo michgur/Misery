@@ -31,6 +31,7 @@ class RenderEngine : public ECSListener {
     void renderThread();
     static void* renderThread(void* ths);
 
+public: // temporary
     void render(uint entity, float delta);
 
     ECS& ecs;

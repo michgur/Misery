@@ -16,7 +16,7 @@ class Texture(val pointer: Long)
 {
     constructor(assets: AssetManager, path: String) : this(BitmapFactory.decodeStream(assets.open(path)))
     constructor(bitmap: Bitmap) : this(MiseryJNI.loadTexture(bitmap)) {
-        bitmap.recycle()
+//        bitmap.recycle()
     }
 
 //    private var unit: Int = 0

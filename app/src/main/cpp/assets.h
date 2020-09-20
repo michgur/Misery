@@ -64,7 +64,7 @@ public:
         int size = sizeof(uint32_t) * info.width * info.height;
         void *src, *buffer = std::malloc(size);
         AndroidBitmap_lockPixels(env, bitmap, &src);
-        std::memcpy(src, buffer, size);
+        std::memcpy(buffer, src, size);
         // release the bitmap (data is copied)
         AndroidBitmap_unlockPixels(env, bitmap);
         tasks.back().texture = new std::pair<AndroidBitmapInfo, void*> { info, buffer };

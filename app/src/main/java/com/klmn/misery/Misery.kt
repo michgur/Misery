@@ -17,10 +17,11 @@ class Misery : Activity()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val view = MiseryTextureView(this)
+        val view = MiseryView(FlappyPig(this))
         setContentView(view)
 
-        FlappyPig(this).init()
+        MiseryJNI.setNativeAssetManager(assets)
+//        FlappyPig(this).init()
     }
 
     override fun onDestroy() {

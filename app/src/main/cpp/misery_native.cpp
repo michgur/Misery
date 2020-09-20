@@ -24,9 +24,11 @@
 /** pass a java reference for the app's assetManager */
 extern "C" JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz, jobject asset_manager) {
-    /** initialize physics engine */
-    const char* motionTypes[] = { "transform", "motion" };
-    Misery::ecs.addSystem(motionSystem, 2, motionTypes);
+    Misery::renderContext.assetLoader.setAssetManager(AAssetManager_fromJava(env, asset_manager));
+
+    //    /** initialize physics engine */
+//    const char* motionTypes[] = { "transform", "motion" };
+//    Misery::ecs.addSystem(motionSystem, 2, motionTypes);
 }
 
 /** load a mesh asset and return a pointer to its data */
@@ -214,4 +216,9 @@ extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_loadTexture(JNIEnv *env, jobject thiz, jobject texture) {
     return (long) new AssetID(Misery::renderContext.assetLoader.loadTexture(env, texture));
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_loadAssetsAndRender(JNIEnv *env, jobject thiz, jfloat delta) {
+    Misery::renderContext.assetLoader.load();
+    for (uint i : Misery::renderContext.entities) Misery::renderContext.render(i, delta);
 }

@@ -97,6 +97,8 @@ void RenderEngine::renderThread() {
             LOGI("fps: %i", fps);
             fps = 0;
             timer = 0;
+#define RANDF (float) std::rand() / (float) RAND_MAX
+            glClearColor(RANDF, RANDF, RANDF, 1.0f);
         }
         timespec diff {};
         clock_gettimediff(CLOCK_MONOTONIC, &last, &diff);
