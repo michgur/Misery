@@ -4,6 +4,7 @@
 
 #include "RenderEngine.h"
 #include <GLES3/gl3.h>
+#include <GLES/gl.h>
 #include <pthread.h>
 #include <ctime>
 #include <EGL/egl.h>
@@ -25,10 +26,10 @@ namespace Misery { RenderEngine renderContext(ecs); }
 
 void RenderEngine::createEGLContext() {
     display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    ASSERT(display, "could not get EGL display! error 0x%04x", eglGetError());
+    ASSERT(display, "error: eglGetDisplay() failed 0x%04x", eglGetError());
 
     int v_major, v_minor;
-    ASSERT(eglInitialize(display, &v_major, &v_minor), "could not initialize EGL! error 0x%04x", eglGetError());
+    ASSERT(eglInitialize(display, &v_major, &v_minor), "error: eglInitialize() failed 0x%04x", eglGetError());
 
     int config_attribs[] = {
             EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
@@ -36,20 +37,41 @@ void RenderEngine::createEGLContext() {
             EGL_DEPTH_SIZE, 16, EGL_STENCIL_SIZE, 0,
             EGL_NONE
     };
-    int num_configs = 0;
-    EGLConfig config = nullptr;
-    ASSERT(eglChooseConfig(display, config_attribs, &config, 1, &num_configs) || num_configs,
-           "could not choose EGL configuration! error 0x%04x", eglGetError());
+    int num_configs, i;
+    eglChooseConfig(display, config_attribs, nullptr, 0, &num_configs);
+    auto* configs = new EGLConfig[num_configs];
+    ASSERT(eglChooseConfig(display, config_attribs, configs, 1, &num_configs) && num_configs,
+           "error: eglChooseConfig() failed 0x%04x", eglGetError());
+    for (i = 0; i < num_configs; i++) {
+        auto attr = [&](int attr, int value) {
+            int res;
+            eglGetConfigAttrib(display, configs[i], attr, &res);
+            return res >= value;
+        };
+        if (attr(EGL_RED_SIZE, 8) && attr(EGL_BLUE_SIZE, 8) && attr(EGL_GREEN_SIZE, 8)
+            && attr(EGL_DEPTH_SIZE, 16) && attr(EGL_STENCIL_SIZE, 0))
+            break;
+    }
+    ASSERT(i < num_configs, "Error: eglChooseConfig() returned no valid configs");
 
     int context_attribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
-    context = eglCreateContext(display, config, EGL_NO_CONTEXT, context_attribs);
+    context = eglCreateContext(display, configs[i], EGL_NO_CONTEXT, context_attribs);
     int err = eglGetError();
-    ASSERT(err == EGL_SUCCESS, "could not create EGL context! error 0x%04x", err);
+    ASSERT(err == EGL_SUCCESS, "error: eglCreateContext() failed 0x%04x", err);
 
-    surface = eglCreateWindowSurface(display, config, window, nullptr);
-    ASSERT(surface, "could not create EGL surface! error 0x%04x", eglGetError());
+    surface = eglCreateWindowSurface(display, configs[i], window, nullptr);
+    if (surface == nullptr || surface == EGL_NO_SURFACE) {
+        int error = eglGetError();
+        if (error == EGL_BAD_NATIVE_WINDOW)
+            LOGE("error: createWindowSurface() returned EGL_BAD_NATIVE_WINDOW.");
+        ASSERT(false, "error: createWindowSurface() failed 0x%04x", error);
+    }
 
-    ASSERT(eglMakeCurrent(display, surface, surface, context), "EGL make current failed! error 0x%04x", eglGetError());
+    ASSERT(eglMakeCurrent(display, surface, surface, context), "error: eglMakeCurrent() failed 0x%04x", eglGetError());
+
+    ASSERT(eglQuerySurface(display, surface, EGL_WIDTH, (int*) &width) &&
+        eglQuerySurface(display, surface, EGL_HEIGHT, (int*) &height),
+        "could not query surface size! error 0x%04x", eglGetError());
 }
 void RenderEngine::initOpenGL() {
     glFrontFace(GL_CW);
@@ -58,6 +80,7 @@ void RenderEngine::initOpenGL() {
     glEnable(GL_DEPTH_TEST);
 
     glClearColor(1, 0, 1, 1);
+    glViewport(0, 0, width, height);
 }
 
 inline void clock_gettimediff(clockid_t clockid, timespec* now, timespec* diff) {
@@ -74,7 +97,7 @@ inline void clock_gettimediff(clockid_t clockid, timespec* now, timespec* diff) 
     }
 }
 void RenderEngine::renderThread() {
-    createEGLContext();
+//    createEGLContext();
     initOpenGL();
 
     timespec last {};
@@ -125,14 +148,21 @@ void RenderEngine::renderThread() {
         fps++;
         timer += diff.tv_nsec + SECOND * diff.tv_sec;
     }
-
-    ANativeWindow_release(window);
 }
 
 void RenderEngine::start(AAssetManager* am, ANativeWindow* win) {
     this->assetLoader.setAssetManager(am);
     this->window = win;
     pthread_create(&thread, nullptr, RenderEngine::renderThread, this);
+}
+
+void RenderEngine::start(EGLDisplay* d, EGLContext* c, EGLSurface* s, AAssetManager* am, ANativeWindow* win) {
+    this->assetLoader.setAssetManager(am);
+    this->window = win;
+    this->display = d;
+    this->context = c;
+    this->surface = s;
+//    renderThread();
 }
 
 void* RenderEngine::renderThread(void *ths) {
@@ -169,4 +199,13 @@ void RenderEngine::render(uint entity, float) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
+}
+
+void RenderEngine::drawFrame() {
+    eglSwapBuffers(display, surface);
+    //    assetLoader.load();
+//
+//    // draw
+//    glClear(GL_DEPTH_BUFFER_BIT + GL_COLOR_BUFFER_BIT);
+//    for (uint entity : entities) render(entity, 0);
 }

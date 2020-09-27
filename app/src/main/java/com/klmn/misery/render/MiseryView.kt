@@ -46,6 +46,8 @@ class MiseryView(val game: Game) : GLSurfaceView(game.activity), GLSurfaceView.R
     private var timer = 0L
     private val frameTime = SECOND / FRAME_CAP
     override fun onDrawFrame(gl: GL10) {
+        MiseryJNI.startThread(context.assets, holder.surface)
+
         var now = nanoTime()
         if (timer >= SECOND) {
             println("fps: $fps")
@@ -58,8 +60,7 @@ class MiseryView(val game: Game) : GLSurfaceView(game.activity), GLSurfaceView.R
         }
 
         glClear(GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT)
-//        if (last != 0L) MiseryJNI.updateECS((now - last).toFloat() / SECOND)
-        MiseryJNI.loadAssetsAndRender((now - last).toFloat() / SECOND)
+        if (last != 0L) MiseryJNI.drawFrame()//MiseryJNI.updateECS((now - last).toFloat() / SECOND)
 
         fps++
         timer += now - last

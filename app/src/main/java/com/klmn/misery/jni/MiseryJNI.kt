@@ -3,6 +3,7 @@ package com.klmn.misery.jni
 import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.view.Surface
+import android.view.SurfaceHolder
 import com.klmn.misery.update.Entity
 
 object MiseryJNI
@@ -46,6 +47,10 @@ object MiseryJNI
     external fun setViewSize(width: Int, height: Int)
 
     external fun startThread(assets: AssetManager, window: Surface)
+    external fun startThreadEGL(display: Long, context: Long, surface: Long, assets: AssetManager, window: Surface)
+    external fun setSurface(surface: Surface)
 
-    external fun loadAssetsAndRender(delta: Float)
+    external fun drawFrame()
+    external fun initEGL(surface: Surface)
+    external fun swapBuffers()
 }

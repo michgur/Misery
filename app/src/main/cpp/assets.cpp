@@ -61,17 +61,26 @@ inline void loadIndices(aiMesh* mesh, uint* indices) {
     }
 }
 inline uint createVAO(uint* indices, uint indicesSize, float* vertices, uint verticesSize) {
+    uint error = glGetError();
+    if (error) LOGW("warning: found GL error 0x%04x", error);
+
     uint buffers[3];
     glGenVertexArrays(1, buffers);
     glGenBuffers(2, buffers + 1);
+    error = glGetError();
+    ASSERT(error == GL_NO_ERROR, "GL error: could not generate buffer objects! error 0x%04x", error);
 
     glBindVertexArray(buffers[0]);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[2]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, GL_STATIC_DRAW);
+    error = glGetError();
+    ASSERT(error == GL_NO_ERROR, "GL error: could not set ibo data! error 0x%04x", error);
 
     glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
     glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
+    error = glGetError();
+    ASSERT(error == GL_NO_ERROR, "GL error: could not set vbo data! error 0x%04x", error);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, false, 44, nullptr);
@@ -81,6 +90,9 @@ inline uint createVAO(uint* indices, uint indicesSize, float* vertices, uint ver
     glVertexAttribPointer(2, 3, GL_FLOAT, false, 44, ((void*) 20));
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 3, GL_FLOAT, false, 44, ((void*) 32));
+
+    error = glGetError();
+    ASSERT(error == GL_NO_ERROR, "GL error: could not set vertex attrib pointers! error 0x%04x", error);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -146,7 +158,6 @@ void AssetLoader::loadMesh(AssetLoader::LoadTask &task) const {
 void AssetLoader::loadShader(AssetLoader::LoadTask &task) const {
     GLuint id = glCreateProgram();
     ASSERT(id, "GLES could not create shader program");
-    glUseProgram(id);
 
     openAndAddShader(assetManager, id, task.asset[0].c_str(), GL_VERTEX_SHADER);
     openAndAddShader(assetManager, id, task.asset[1].c_str(), GL_FRAGMENT_SHADER);
@@ -161,7 +172,6 @@ void AssetLoader::loadShader(AssetLoader::LoadTask &task) const {
     LOGI("%s", log);
     delete[] log;
 
-    glUseProgram(0);
     task.id_promise.set_value(new uint(id));
     delete task.asset;
 }

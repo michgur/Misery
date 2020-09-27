@@ -212,13 +212,43 @@ Java_com_klmn_misery_jni_MiseryJNI_startThread(JNIEnv *env, jobject thiz, jobjec
     AAssetManager* a = AAssetManager_fromJava(env, assetManager);
     Misery::renderContext.start(a, s);
 }
+extern "C" JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_startThreadEGL(JNIEnv *env, jobject thiz,
+        jlong display, jlong context, jlong surface,
+        jobject assetManager, jobject window) {
+    ANativeWindow* s = ANativeWindow_fromSurface(env, window);
+    AAssetManager* a = AAssetManager_fromJava(env, assetManager);
+    Misery::renderContext.start(a, s);
+}
+
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_loadTexture(JNIEnv *env, jobject thiz, jobject texture) {
     return (long) new AssetID(Misery::renderContext.assetLoader.loadTexture(env, texture));
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_setSurface(JNIEnv *env, jobject thiz, jobject surface) {
+    if (surface != nullptr) {
+        ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
+        LOGI("got window %p", window);
+        Misery::renderContext.setWindow(window);
+    } else {
+        LOGI("releasing window");
+        ANativeWindow_release(Misery::renderContext.getWindow());
+    }
 }extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_loadAssetsAndRender(JNIEnv *env, jobject thiz, jfloat delta) {
-    Misery::renderContext.assetLoader.load();
-    for (uint i : Misery::renderContext.entities) Misery::renderContext.render(i, delta);
+Java_com_klmn_misery_jni_MiseryJNI_drawFrame(JNIEnv *env, jobject thiz) {
+    Misery::renderContext.drawFrame();
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_initEGL(JNIEnv *env, jobject thiz, jobject surface) {
+    ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
+    Misery::renderContext.setWindow(window);
+    Misery::renderContext.createEGLContext();
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_swapBuffers(JNIEnv *env, jobject thiz) {
+    Misery::renderContext.drawFrame();
 }
