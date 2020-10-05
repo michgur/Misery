@@ -4,7 +4,6 @@
 
 #include "RenderEngine.h"
 #include <GLES3/gl3.h>
-#include <GLES/gl.h>
 #include <pthread.h>
 #include <ctime>
 #include <EGL/egl.h>
@@ -14,13 +13,6 @@
 #include "assets.h"
 
 #define SECOND 1000000000L
-
-void RenderEngine::setViewSize(uint w, uint h) {
-    width = w;
-    height = h;
-
-    projection = Misery::createProjectionMatrix(std::acos(0), width, height, 0.1, 1000);
-}
 
 namespace Misery { RenderEngine renderContext(ecs); }
 
@@ -72,6 +64,8 @@ void RenderEngine::createEGLContext() {
     ASSERT(eglQuerySurface(display, surface, EGL_WIDTH, (int*) &width) &&
         eglQuerySurface(display, surface, EGL_HEIGHT, (int*) &height),
         "could not query surface size! error 0x%04x", eglGetError());
+
+    initOpenGL();
 }
 void RenderEngine::initOpenGL() {
     glFrontFace(GL_CW);
@@ -81,6 +75,8 @@ void RenderEngine::initOpenGL() {
 
     glClearColor(1, 0, 1, 1);
     glViewport(0, 0, width, height);
+
+    projection = Misery::createProjectionMatrix(90, width, height, 0.1f, 1000);
 }
 
 inline void clock_gettimediff(clockid_t clockid, timespec* now, timespec* diff) {
@@ -97,7 +93,7 @@ inline void clock_gettimediff(clockid_t clockid, timespec* now, timespec* diff) 
     }
 }
 void RenderEngine::renderThread() {
-//    createEGLContext();
+    createEGLContext();
     initOpenGL();
 
     timespec last {};
@@ -156,15 +152,6 @@ void RenderEngine::start(AAssetManager* am, ANativeWindow* win) {
     pthread_create(&thread, nullptr, RenderEngine::renderThread, this);
 }
 
-void RenderEngine::start(EGLDisplay* d, EGLContext* c, EGLSurface* s, AAssetManager* am, ANativeWindow* win) {
-    this->assetLoader.setAssetManager(am);
-    this->window = win;
-    this->display = d;
-    this->context = c;
-    this->surface = s;
-//    renderThread();
-}
-
 void* RenderEngine::renderThread(void *ths) {
     ((RenderEngine*) ths)->renderThread();
     pthread_exit(nullptr);
@@ -177,8 +164,7 @@ void RenderEngine::kill() {
 
 void RenderEngine::render(uint entity, float) {
     uint material = *ecs.getComponent<uint>(entity, "material");
-    auto id = *ecs.getComponent<AssetID*>(material, "shader");
-    uint shader = *id->get();
+    uint shader = *(*ecs.getComponent<AssetID*>(material, "shader"))->get();
     glUseProgram(shader);
 
     int mvp = glGetUniformLocation(shader, "mvp");
@@ -199,13 +185,4 @@ void RenderEngine::render(uint entity, float) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
-}
-
-void RenderEngine::drawFrame() {
-    eglSwapBuffers(display, surface);
-    //    assetLoader.load();
-//
-//    // draw
-//    glClear(GL_DEPTH_BUFFER_BIT + GL_COLOR_BUFFER_BIT);
-//    for (uint entity : entities) render(entity, 0);
 }

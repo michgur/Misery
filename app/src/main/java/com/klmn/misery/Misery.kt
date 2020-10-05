@@ -24,7 +24,7 @@ class Misery : Activity()
         } else {
             val view = MiserySurfaceView(this)
             setContentView(view)
-//            FlappyPig(this).init()
+            FlappyPig(this).init()
         }
     }
 

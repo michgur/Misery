@@ -21,16 +21,6 @@
 #include "interaction.h"
 #include "physics.h"
 
-/** pass a java reference for the app's assetManager */
-extern "C" JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_setNativeAssetManager(JNIEnv *env, jobject thiz, jobject asset_manager) {
-    Misery::renderContext.assetLoader.setAssetManager(AAssetManager_fromJava(env, asset_manager));
-
-    //    /** initialize physics engine */
-//    const char* motionTypes[] = { "transform", "motion" };
-//    Misery::ecs.addSystem(motionSystem, 2, motionTypes);
-}
-
 /** load a mesh asset and return a pointer to its data */
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz, jstring file) {
@@ -159,10 +149,6 @@ Java_com_klmn_misery_jni_MiseryJNI_putLongComponent(JNIEnv *env, jobject thiz, j
     Misery::ecs.putComponent<long>(entity, typeChars, ref);
     env->ReleaseStringUTFChars(type, typeChars);
 }extern "C"
-JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_setViewSize(JNIEnv *env, jobject thiz, jint width, jint height) {
-    Misery::renderContext.setViewSize((uint) width, (uint) height);
-}extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_getCameraTransform(JNIEnv *env, jobject thiz) {
     return (long) &Misery::renderContext.camera;
@@ -206,21 +192,6 @@ Java_com_klmn_misery_jni_MiseryJNI_putMotionComponent(JNIEnv *env, jobject thiz,
     Misery::ecs.putComponent(entity, "motion", component);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_startThread(JNIEnv *env, jobject thiz, jobject assetManager, jobject surface) {
-    ANativeWindow* s = ANativeWindow_fromSurface(env, surface);
-    AAssetManager* a = AAssetManager_fromJava(env, assetManager);
-    Misery::renderContext.start(a, s);
-}
-extern "C" JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_startThreadEGL(JNIEnv *env, jobject thiz,
-        jlong display, jlong context, jlong surface,
-        jobject assetManager, jobject window) {
-    ANativeWindow* s = ANativeWindow_fromSurface(env, window);
-    AAssetManager* a = AAssetManager_fromJava(env, assetManager);
-    Misery::renderContext.start(a, s);
-}
-
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_loadTexture(JNIEnv *env, jobject thiz, jobject texture) {
@@ -228,27 +199,9 @@ Java_com_klmn_misery_jni_MiseryJNI_loadTexture(JNIEnv *env, jobject thiz, jobjec
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_setSurface(JNIEnv *env, jobject thiz, jobject surface) {
-    if (surface != nullptr) {
-        ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
-        LOGI("got window %p", window);
-        Misery::renderContext.setWindow(window);
-    } else {
-        LOGI("releasing window");
-        ANativeWindow_release(Misery::renderContext.getWindow());
-    }
-}extern "C"
-JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_drawFrame(JNIEnv *env, jobject thiz) {
-    Misery::renderContext.drawFrame();
-}extern "C"
-JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_initEGL(JNIEnv *env, jobject thiz, jobject surface) {
+Java_com_klmn_misery_jni_MiseryJNI_initEGL(JNIEnv *env, jobject thiz,
+        jobject surface, jobject assetManager) {
     ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
-    Misery::renderContext.setWindow(window);
-    Misery::renderContext.createEGLContext();
-}extern "C"
-JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_swapBuffers(JNIEnv *env, jobject thiz) {
-    Misery::renderContext.drawFrame();
+    AAssetManager* am = AAssetManager_fromJava(env, assetManager);
+    Misery::renderContext.start(am, window);
 }

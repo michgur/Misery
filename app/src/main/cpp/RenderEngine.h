@@ -25,7 +25,7 @@ class RenderEngine : public ECSListener {
     EGLContext context;
     EGLSurface surface;
     EGLDisplay display;
-public: // temporary
+
     void createEGLContext();
     void initOpenGL();
 
@@ -64,17 +64,8 @@ public:
     Transform camera;
     AssetLoader assetLoader {};
 
-    inline void setWindow(ANativeWindow* awindow) { this->window = awindow; }
-    inline ANativeWindow* getWindow() { return window; }
-    void setViewSize(uint w, uint h);
-
     void start(AAssetManager* assetManager, ANativeWindow* window);
     void kill();
-
-    void drawFrame();
-
-    void start(EGLDisplay *display, EGLContext *context, EGLSurface *surface,
-            AAssetManager *assetManager, ANativeWindow *window);
 };
 
 namespace Misery { extern RenderEngine renderContext; }

@@ -10,7 +10,6 @@ object MiseryJNI
 {
     init { System.loadLibrary("misery-native-lib") }
 
-    external fun setNativeAssetManager(assetManager: AssetManager)
     external fun loadMesh(file: String): Long
     external fun drawMesh(pointer: Long)
     external fun createProgram(vertexFile: String, fragmentFile: String): Long
@@ -44,13 +43,6 @@ object MiseryJNI
     external fun setFloats(pointer: Long, f: FloatArray, offset: Int)
 
     external fun getCameraTransform(): Long
-    external fun setViewSize(width: Int, height: Int)
 
-    external fun startThread(assets: AssetManager, window: Surface)
-    external fun startThreadEGL(display: Long, context: Long, surface: Long, assets: AssetManager, window: Surface)
-    external fun setSurface(surface: Surface)
-
-    external fun drawFrame()
-    external fun initEGL(surface: Surface)
-    external fun swapBuffers()
+    external fun initEGL(surface: Surface, assets: AssetManager)
 }
