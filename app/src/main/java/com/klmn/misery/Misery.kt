@@ -21,6 +21,16 @@ class Misery : Activity()
         FlappyPig(this).init()
     }
 
+    override fun onResume() {
+        super.onResume()
+        MiseryJNI.startRenderThread()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        MiseryJNI.killRenderThread()
+    }
+
     override fun onDestroy() {
         MiseryJNI.clearECS()
         super.onDestroy()

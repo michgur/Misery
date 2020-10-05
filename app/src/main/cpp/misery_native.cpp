@@ -199,9 +199,22 @@ Java_com_klmn_misery_jni_MiseryJNI_loadTexture(JNIEnv *env, jobject thiz, jobjec
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_initEGL(JNIEnv *env, jobject thiz,
-        jobject surface, jobject assetManager) {
+Java_com_klmn_misery_jni_MiseryJNI_startRenderThread(JNIEnv *env, jobject thiz) {
+    Misery::renderContext.start();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_setSurface(JNIEnv *env, jobject thiz, jobject surface,
+                                              jobject assets) {
     ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
-    AAssetManager* am = AAssetManager_fromJava(env, assetManager);
-    Misery::renderContext.start(am, window);
+    AAssetManager* assetManager = AAssetManager_fromJava(env, assets);
+    Misery::renderContext.setSurface(assetManager, window);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_killRenderThread(JNIEnv *env, jobject thiz) {
+    Misery::renderContext.kill();
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_releaseSurface(JNIEnv *env, jobject thiz) {
+    Misery::renderContext.releaseSurface();
 }

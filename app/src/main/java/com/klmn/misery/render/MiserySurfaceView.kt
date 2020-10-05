@@ -24,7 +24,7 @@ class MiserySurfaceView(context: Context) : SurfaceView(context), SurfaceHolder.
     override fun surfaceCreated(holder: SurfaceHolder) {}
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) =
-            MiseryJNI.initEGL(holder.surface, context.assets)
+            MiseryJNI.setSurface(holder.surface, context.assets)
 
-    override fun surfaceDestroyed(holder: SurfaceHolder) {}
+    override fun surfaceDestroyed(holder: SurfaceHolder) = MiseryJNI.releaseSurface()
 }

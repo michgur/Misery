@@ -44,5 +44,8 @@ object MiseryJNI
 
     external fun getCameraTransform(): Long
 
-    external fun initEGL(surface: Surface, assets: AssetManager)
+    external fun startRenderThread()
+    external fun killRenderThread()
+    external fun setSurface(surface: Surface, assets: AssetManager)
+    external fun releaseSurface()
 }

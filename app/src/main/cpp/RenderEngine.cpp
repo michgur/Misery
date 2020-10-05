@@ -93,73 +93,95 @@ inline void clock_gettimediff(clockid_t clockid, timespec* now, timespec* diff) 
     }
 }
 void RenderEngine::renderThread() {
-    createEGLContext();
-    initOpenGL();
-
     timespec last {};
     long timer = 0L;
     long frameTime = SECOND / FRAME_CAP;
     uint fps = 0;
 
+    bool running = true;
+
     // render loop
-    while (true) {
-        // validate EGL context
-        if(context != eglGetCurrentContext() || surface != eglGetCurrentSurface(EGL_DRAW)) {
-            int err = eglGetError();
-            if (err != EGL_SUCCESS) LOGE("EGL context / surface not current. error 0x%04x", err);
-            LOGI("trying to make current EGL context");
-            ASSERT(eglMakeCurrent(display, surface, surface, context), "EGL make current failed! error 0x%04x", eglGetError());
+    while (running) {
+        pthread_mutex_lock(&mutex);
+        switch (interrupt) {
+            case MISERY_INT_SURFACE:
+                createEGLContext();
+                initOpenGL();
+                break;
+            case MISERY_INT_KILL:
+                running = false;
+                destroyEGLContext();
+                break;
+            case MISERY_INT_NONE:
+            default:
+                break;
         }
+        interrupt = MISERY_INT_NONE;
 
-        // wait for frame
-        if (timer >= SECOND) {
-            LOGI("fps: %i", fps);
-            fps = 0;
-            timer = 0;
-#define RANDF (float) std::rand() / (float) RAND_MAX
-            glClearColor(RANDF, RANDF, RANDF, 1.0f);
+        if (display) {
+            // validate EGL context
+            if(context != eglGetCurrentContext() || surface != eglGetCurrentSurface(EGL_DRAW)) {
+                int err = eglGetError();
+                if (err != EGL_SUCCESS) LOGE("EGL context / surface not current. error 0x%04x", err);
+                LOGI("trying to make current EGL context");
+                ASSERT(eglMakeCurrent(display, surface, surface, context), "EGL make current failed! error 0x%04x", eglGetError());
+            }
+
+            // wait for frame
+            if (timer >= SECOND) {
+                LOGI("fps: %i", fps);
+                fps = 0;
+                timer = 0;
+            }
+            timespec diff {};
+            clock_gettimediff(CLOCK_MONOTONIC, &last, &diff);
+            if (diff.tv_nsec < frameTime) {
+                timespec rest { 0, frameTime - diff.tv_nsec };
+                while(nanosleep(&rest, &rest));
+                clock_gettimediff(CLOCK_MONOTONIC, &last, &rest);
+                diff.tv_sec += rest.tv_sec;
+                diff.tv_nsec += rest.tv_nsec;
+            }
+
+            float delta = (float) diff.tv_nsec / SECOND + diff.tv_sec;
+            // load assets
+            assetLoader.load();
+
+            // draw
+            glClear(GL_DEPTH_BUFFER_BIT + GL_COLOR_BUFFER_BIT);
+            for (uint entity : entities) render(entity, delta);
+
+            // swap buffers
+            ASSERT(eglSwapBuffers(display, surface), "could not swap buffers! error 0x%04x", eglGetError());
+
+            // count frames
+            fps++;
+            timer += diff.tv_nsec + SECOND * diff.tv_sec;
         }
-        timespec diff {};
-        clock_gettimediff(CLOCK_MONOTONIC, &last, &diff);
-        if (diff.tv_nsec < frameTime) {
-            timespec rest { 0, frameTime - diff.tv_nsec };
-            while(nanosleep(&rest, &rest));
-            clock_gettimediff(CLOCK_MONOTONIC, &last, &rest);
-            diff.tv_sec += rest.tv_sec;
-            diff.tv_nsec += rest.tv_nsec;
-        }
-
-        float delta = (float) diff.tv_nsec / SECOND + diff.tv_sec;
-        // load assets
-        assetLoader.load();
-
-        // draw
-        glClear(GL_DEPTH_BUFFER_BIT + GL_COLOR_BUFFER_BIT);
-        for (uint entity : entities) render(entity, delta);
-
-        // swap buffers
-        ASSERT(eglSwapBuffers(display, surface), "could not swap buffers! error 0x%04x", eglGetError());
-
-        // count frames
-        fps++;
-        timer += diff.tv_nsec + SECOND * diff.tv_sec;
+        pthread_mutex_unlock(&mutex);
     }
 }
 
-void RenderEngine::start(AAssetManager* am, ANativeWindow* win) {
-    this->assetLoader.setAssetManager(am);
-    this->window = win;
+void RenderEngine::start() {
+    LOGI("starting render thread (%lu)", thread);
+    pthread_mutex_init(&mutex, nullptr);
     pthread_create(&thread, nullptr, RenderEngine::renderThread, this);
 }
 
 void* RenderEngine::renderThread(void *ths) {
     ((RenderEngine*) ths)->renderThread();
-    pthread_exit(nullptr);
+    return nullptr;
 }
 
 void RenderEngine::kill() {
-    pthread_kill(thread, 0);
-    ANativeWindow_release(window);
+    pthread_mutex_lock(&mutex);
+    LOGI("killing render thread (%lu)", thread);
+    interrupt = MISERY_INT_KILL;
+    pthread_mutex_unlock(&mutex);
+
+    pthread_join(thread, nullptr);
+    pthread_mutex_destroy(&mutex);
+    LOGI("render thread stopped");
 }
 
 void RenderEngine::render(uint entity, float) {
@@ -186,3 +208,23 @@ void RenderEngine::render(uint entity, float) {
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
 }
+
+void RenderEngine::destroyEGLContext() {
+    eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroyContext(display, context);
+    eglDestroySurface(display, surface);
+    eglTerminate(display);
+
+    ANativeWindow_release(window);
+}
+
+void RenderEngine::setSurface(AAssetManager* assetManager, ANativeWindow* nativeWindow) {
+    pthread_mutex_lock(&mutex);
+    LOGI("render thread (%lu) setting surface %p", thread, nativeWindow);
+    assetLoader.setAssetManager(assetManager);
+    window = nativeWindow;
+    interrupt = MISERY_INT_SURFACE;
+    pthread_mutex_unlock(&mutex);
+}
+
+void RenderEngine::releaseSurface() { ANativeWindow_release(window); }

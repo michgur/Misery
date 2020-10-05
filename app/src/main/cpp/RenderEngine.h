@@ -16,17 +16,25 @@
 #include "ECS.h"
 #include "assets.h"
 
+#define MISERY_INT_NONE 0
+#define MISERY_INT_KILL 1
+#define MISERY_INT_SURFACE 2
+
 /** This class is responsible for rendering all of the entities.
  * It runs on a separate thread which also hosts an OpenGL context.
  * It also is responsible for loading assets that require OpenGL to be loaded */
 class RenderEngine : public ECSListener {
     pthread_t thread;
+    pthread_mutex_t mutex;
+    int interrupt = MISERY_INT_NONE;
+
     ANativeWindow* window;
     EGLContext context;
     EGLSurface surface;
     EGLDisplay display;
 
     void createEGLContext();
+    void destroyEGLContext();
     void initOpenGL();
 
     void renderThread();
@@ -64,7 +72,10 @@ public:
     Transform camera;
     AssetLoader assetLoader {};
 
-    void start(AAssetManager* assetManager, ANativeWindow* window);
+    void setSurface(AAssetManager* assetManager, ANativeWindow* window);
+    void releaseSurface();
+
+    void start();
     void kill();
 };
 
