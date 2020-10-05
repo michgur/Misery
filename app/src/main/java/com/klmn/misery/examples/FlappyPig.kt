@@ -13,7 +13,7 @@ import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
 
 class FlappyPig(activity: Activity) : Game(activity) {
-    private var speed = 0f;
+    private var speed = 3f;
 
     private val pillar: Map<String, Any> by lazy { mapOf(
             "mesh" to Mesh("pillar.obj"),
@@ -43,9 +43,9 @@ class FlappyPig(activity: Activity) : Game(activity) {
                     diffuse = Texture(activity.assets, "pig.png")
             ),
             "transform" to Transform(
-                    translation = Vec3f.BACK * 15f,
+                    translation = Vec3f.BACK * 8f,
                     rotation = Quaternion.rotation(Vec3f.UP, -.6f),
-                    scale = Vec3f(.05f)
+                    scale = Vec3f(.04f)
             ),
             "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
             "motion" to Motion(),
@@ -69,7 +69,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
                     diffuse = Texture(activity.assets, "skyTexture.jpg")
             ),
             "transform" to Transform(
-                    translation = Vec3f(i * 40f, 0f, -20f),
+                    translation = Vec3f(i * 40f, 0f, -12f),
                     scale = Vec3f(40.1f, 40f, 0f)
             ),
             "background" to true
@@ -106,11 +106,11 @@ class FlappyPig(activity: Activity) : Game(activity) {
             if (speed == 0f) return@system
             val motion = entity["motion", Motion::class]!!
             val transform = entity["transform", Transform::class]!!
-            motion.acceleration += gravity * speed * delta
+//            motion.acceleration += gravity * speed * delta
             transform.rotation = (transform.rotation * Quaternion.rotation(Vec3f.UP, delta)).normalized
 
-            if (transform.translation.y > 25) motion.acceleration *= -1f // hit ceiling
-            if (transform.translation.y < -15) speed = 0f
+//            if (transform.translation.y > 25) motion.acceleration *= -1f // hit ceiling
+//            if (transform.translation.y < -15) speed = 0f
         }
 
         interaction(arrayOf("controls"), arrayOf("pillar")) { e, p, _ ->
