@@ -27,5 +27,5 @@ void motionSystem(uint entity, float delta) {
     auto* motion = Misery::ecs.getComponent<Motion>(entity, "motion");
 
     transform->translation = forestRuth(transform->translation, *motion, delta);
-    motion->velocity *= delta * 10;
+    motion->velocity *= 1 - delta * .01f;
 }

@@ -66,7 +66,7 @@ public:
         }
     }
 
-    uint FRAME_CAP = 30;
+    uint FRAME_CAP = 60;
     uint width = 0, height = 0;
     matrix4f projection;
     Transform camera;

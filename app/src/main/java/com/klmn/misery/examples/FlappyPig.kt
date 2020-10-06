@@ -3,6 +3,7 @@ package com.klmn.misery.examples
 import android.app.Activity
 import android.view.MotionEvent
 import com.klmn.misery.Game
+import com.klmn.misery.math.ImmutableQuaternion
 import com.klmn.misery.math.ImmutableVec3f
 import com.klmn.misery.math.Quaternion
 import com.klmn.misery.math.Vec3f
@@ -11,22 +12,40 @@ import com.klmn.misery.render.Mesh
 import com.klmn.misery.render.Shader
 import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
+import kotlin.math.PI
+import kotlin.random.Random
 
 class FlappyPig(activity: Activity) : Game(activity) {
     private var speed = 0f
 
     private val pillar: Map<String, Any> by lazy { mapOf(
-            "mesh" to Mesh("pillar.obj"),
+            "mesh" to Mesh("cube.obj"),
             "material" to Material(
                     shader = Render.shader,
-                    diffuse = Texture(activity.assets, "pillarTexture.jpg")
+                    diffuse = Texture(activity.assets, "pillar_diffuse.png")
             ),
-            "transform" to Transform(translation = Vec3f(-15f, -25f, -18f), scale = Vec3f(6f)),
-            "aabb" to AABB(Vec3f(-.1f, 0f, -.6f), Vec3f(.1f, 4f, .15f)),
+            "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
             "pillar" to true
     )}
+
     private val pillars = mutableListOf<Entity>()
-    private fun createPillar() = pillars.add(Entity(pillar))
+    private fun createPillar() {
+        val bottom = Entity(pillar)
+        val top = Entity(pillar)
+        val gap = Random.nextInt(-10, 10).toFloat()
+        val gapSize = 10f
+        pillars.add(bottom)
+        pillars.add(top)
+        bottom["transform"] = Transform(
+                translation = Vec3f(-15f, (gap - 15f - gapSize) / 2f, -8f),
+                scale = Vec3f(1f, 15f + gap, 1f)
+        )
+        top["transform"] = Transform(
+                translation = Vec3f(-15f, (gap + 15f + gapSize) / 2f, -8f),
+                scale = Vec3f(1f, 15f - gap, 1f)
+        )
+    }
+    private fun removePillar(pillar: Entity) { if (pillars.remove(pillar)) pillar.destroy() }
     private fun removePillars() {
         pillars.forEach { it.destroy() }
         pillars.clear()
@@ -45,7 +64,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
             "transform" to Transform(
                     translation = Vec3f.BACK * 8f,
                     rotation = Quaternion.rotation(Vec3f.UP, -.6f),
-                    scale = Vec3f(.04f)
+                    scale = Vec3f(.02f)
             ),
             "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
             "motion" to Motion(),
@@ -53,10 +72,10 @@ class FlappyPig(activity: Activity) : Game(activity) {
                     MotionEvent.ACTION_DOWN to {
                         if (speed == 0f) {
                             this["transform", Transform::class]!!.translation = ImmutableVec3f.BACK * 8f
-//                            createPillar()
+                            this["motion", Motion::class]!!.acceleration = ImmutableVec3f(0f)
                             speed = 3f
                         }
-                        else this["motion", Motion::class]!!.acceleration = ImmutableVec3f.UP * 45f
+                        else this["motion", Motion::class]!!.acceleration = ImmutableVec3f.UP * 20f
                     },
             )
     )
@@ -78,6 +97,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
     override fun init() {
         createPlayer()
         createSky()
+        pillar.isEmpty()
 
         // process inputs
         system("controls") { entity, _ ->
@@ -87,23 +107,30 @@ class FlappyPig(activity: Activity) : Game(activity) {
             }
         }
 
+        var timer = 0f
+        var nextPillar = 0
         system("background") { entity, delta ->
             val transform = entity["transform", Transform::class]!!
             if (transform.translation.x > 40f)
                 transform.translation = ImmutableVec3f(-40f, transform.translation.yz)
             transform.translation += Vec3f.RIGHT * speed * delta
+            if (speed > 0f) {
+                timer += delta
+                if (timer > nextPillar) {
+                    createPillar()
+                    nextPillar = Random.nextInt(3, 10)
+                    timer = 0f
+                }
+            }
         }
 
         system("pillar") { entity, delta ->
             val transform = entity["transform", Transform::class]!!
             transform.translation += Vec3f.RIGHT * speed * delta
-            if (transform.translation.x > 15f) {
-                entity.destroy()
-                createPillar()
-            }
+            if (transform.translation.x > 15f) removePillar(entity)
         }
 
-        val gravity = Vec3f.DOWN * 15f
+        val gravity = Vec3f.DOWN * 12f
         system("motion", "controls") { entity, delta ->
             if (speed == 0f) return@system
             val motion = entity["motion", Motion::class]!!
@@ -118,7 +145,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
         interaction(arrayOf("controls"), arrayOf("pillar")) { e, p, _ ->
             e["motion", Motion::class]!!.acceleration = ImmutableVec3f(0f)
             speed = 0f
-            p.destroy()
+            removePillars()
         }
     }
 }

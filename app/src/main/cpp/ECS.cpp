@@ -129,9 +129,10 @@ void ECS::removeComponent(uint entity, uint type) {
 void ECS::removeEntity(JNIEnv *env, uint entity) {
     // delete entity data
     for (auto it : entities[entity].components) {
-        auto compClass = dynamic_cast<ComponentClass<jobject>*>(components[it.first]);
-        if (compClass != nullptr)
-            env->DeleteGlobalRef(*(jobject*) &compClass->components[it.second]);
+    // todo: figure out when to delete the components, maybe reference-based system
+//        auto compClass = dynamic_cast<ComponentClass<jobject>*>(components[it.first]);
+//        if (compClass != nullptr)
+//            env->DeleteGlobalRef(*(jobject*) &compClass->components[it.second]);
         removeComponent(entity, it.first);
     }
 

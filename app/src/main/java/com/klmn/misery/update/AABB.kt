@@ -14,7 +14,7 @@ import com.klmn.misery.math.Vec3f
  */
 class AABB : NativeComponent {
     constructor(pointer: Long) : super(pointer)
-    constructor(min: Vec3f = Vec3f(), max: Vec3f = Vec3f()) {
+    constructor(min: Vec3f = Vec3f(-1f), max: Vec3f = Vec3f(1f)) {
         this.pointer = 0
         this.native = false
         this.min = min.toImmutable()
