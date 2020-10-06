@@ -3,6 +3,7 @@
 //
 
 #include "interaction.h"
+#include "physics.h"
 #include <algorithm>
 #include <limits>
 
@@ -13,6 +14,10 @@ InteractionWorld::InteractionWorld(ECS &ecs) : ecs(ecs), comparator{ .ecs = ecs 
     const char* types[] = { "transform", "aabb" };
     interactableSignature = ecs.createSignature(2, types);
     ecs.addListener(this);
+
+    // todo does not belong here
+    const char* motion_types[] = { "motion", "transform" };
+    ecs.addSystem(motionSystem, 2, motion_types);
 }
 
 #define MATCHES(a, b) ((a & b) == b)

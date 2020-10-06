@@ -13,7 +13,7 @@ import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
 
 class FlappyPig(activity: Activity) : Game(activity) {
-    private var speed = 3f;
+    private var speed = 0f
 
     private val pillar: Map<String, Any> by lazy { mapOf(
             "mesh" to Mesh("pillar.obj"),
@@ -50,10 +50,9 @@ class FlappyPig(activity: Activity) : Game(activity) {
             "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
             "motion" to Motion(),
             "controls" to TouchControls(
-                    MotionEvent.ACTION_DOWN to { event ->
+                    MotionEvent.ACTION_DOWN to {
                         if (speed == 0f) {
-                            this["transform", Transform::class]!!.translation = ImmutableVec3f.BACK * 10f
-
+                            this["transform", Transform::class]!!.translation = ImmutableVec3f.BACK * 8f
 //                            createPillar()
                             speed = 3f
                         }
@@ -82,7 +81,10 @@ class FlappyPig(activity: Activity) : Game(activity) {
 
         // process inputs
         system("controls") { entity, _ ->
-            inputBuffer.forEach { entity["controls", TouchControls::class]!!.onTouchEvent(entity, it) }
+            if (!inputLock.isLocked) {
+                inputBuffer.forEach { entity["controls", TouchControls::class]!!.onTouchEvent(entity, it) }
+                inputBuffer.clear()
+            }
         }
 
         system("background") { entity, delta ->
@@ -106,11 +108,11 @@ class FlappyPig(activity: Activity) : Game(activity) {
             if (speed == 0f) return@system
             val motion = entity["motion", Motion::class]!!
             val transform = entity["transform", Transform::class]!!
-//            motion.acceleration += gravity * speed * delta
+            motion.acceleration += gravity * speed * delta
             transform.rotation = (transform.rotation * Quaternion.rotation(Vec3f.UP, delta)).normalized
 
-//            if (transform.translation.y > 25) motion.acceleration *= -1f // hit ceiling
-//            if (transform.translation.y < -15) speed = 0f
+            if (transform.translation.y > 25) motion.acceleration *= -1f // hit ceiling
+            if (transform.translation.y < -15) speed = 0f
         }
 
         interaction(arrayOf("controls"), arrayOf("pillar")) { e, p, _ ->

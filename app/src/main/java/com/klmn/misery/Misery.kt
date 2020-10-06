@@ -4,10 +4,12 @@ import android.app.Activity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.MotionEvent
 import com.klmn.misery.examples.FlappyPig
 import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.render.MiserySurfaceView
 import kotlin.concurrent.thread
+import kotlin.concurrent.withLock
 
 /**
  * ಠ^ಠ.
@@ -21,18 +23,27 @@ class Misery : Activity()
         var last = System.nanoTime()
         while (running) {
             val now = System.nanoTime()
-            MiseryJNI.updateECS((now - last).toFloat() / 1000000000)
+            MiseryJNI.updateECS((now - last).toFloat() / 1_000_000_000)
             last = now
         }
     }
     private lateinit var thread: Thread
+
+    private val game = FlappyPig(this)
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        return if (event != null) {
+            game.inputLock.withLock { game.inputBuffer.add(event) }
+            true
+        }
+        else false
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val view = MiserySurfaceView(this)
         setContentView(view)
-        FlappyPig(this).init()
+        game.init()
     }
 
     override fun onResume() {

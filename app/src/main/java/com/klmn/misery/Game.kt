@@ -11,6 +11,7 @@ import com.klmn.misery.render.Shader
 import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
 import java.nio.FloatBuffer
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.math.acos
 import kotlin.math.pow
 import kotlin.random.Random
@@ -22,6 +23,7 @@ import kotlin.random.Random
 abstract class Game(val activity: Activity)
 {
     val inputBuffer = mutableSetOf<MotionEvent>()
+    val inputLock = ReentrantLock()
 
     abstract fun init()
 }

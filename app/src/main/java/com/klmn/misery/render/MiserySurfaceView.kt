@@ -1,6 +1,7 @@
 package com.klmn.misery.render
 
 import android.content.Context
+import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import com.klmn.misery.jni.MiseryJNI
