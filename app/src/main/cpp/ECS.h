@@ -68,6 +68,7 @@ public:
     uint newEntity(jobject jwrapper);
     Entity& getEntity(uint entity);
     void removeEntity(JNIEnv* env, uint entity);
+    bool entityExists(uint entity);
     uint getTypeID(const char* type);
     template <typename T>
     void putComponent(uint entity, uint type, T& component);

@@ -55,8 +55,8 @@ void InteractionWorld::interact(JNIEnv* env, float delta, Interactable& active, 
                         ecs.getEntity(passive.entity).jwrapper,
                         delta
                     );
-                    JNI_CATCH_EXCEPTION("java exception occurred when trying to perform interaction %p on entities %i and %i",
-                             &system, active.entity, passive.entity);
+                    JNI_CATCH_EXCEPTION("java exception occurred when trying to perform interaction %p on entities %i, %i",
+                             &interaction, active.entity, passive.entity);
                 }
             }
 }
@@ -76,6 +76,9 @@ void InteractionWorld::update(JNIEnv* env, float delta) {
     vector3f center(0), centerSq(0);
     for (uint i = 0; i < interactables.size(); i++) {
         Interactable& interactable = interactables[i];
+        // make sure that the entity was not deleted mid-run by one of the interactions
+        if (!ecs.entityExists(interactable.entity)) continue;
+
         AABB* aabb = ecs.getComponent<AABB>(interactable.entity, "_taabb");
         vector3f c = aabb->getCenter();
         center += c;
@@ -83,6 +86,9 @@ void InteractionWorld::update(JNIEnv* env, float delta) {
 
         for (uint j = i + 1; j < interactables.size(); j++) {
             Interactable& other = interactables[j];
+            // make sure that the entity was not deleted mid-run by one of the interactions
+            if (!ecs.entityExists(other.entity)) continue;
+
             AABB* otherBB = ecs.getComponent<AABB>(other.entity, "_taabb");
             if (otherBB->min[comparator.axis] > aabb->max[comparator.axis]) break;
 

@@ -172,3 +172,5 @@ bool ECS::hasComponent(uint entity, const char *type) { return hasComponent(enti
 bool ECS::hasComponent(uint entity, uint type) {
     return entities[entity].signature & 0x1u << type;
 }
+
+bool ECS::entityExists(uint entity) { return entity < entities.size() && entities[entity].signature != 0; }
