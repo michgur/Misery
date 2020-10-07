@@ -77,8 +77,11 @@ void ECS::update(JNIEnv* env, jfloat delta) {
     }
     for (auto& system : systems) {
         for (auto& entity : entities)
-            if (MATCHES(system, entity))
+            if (MATCHES(system, entity)) {
                 env->CallVoidMethod(system.jwrapper, system.invoke, entity.jwrapper, delta);
+                JNI_CATCH_EXCEPTION("java exception occurred when trying to run system %p on entity %i",
+                            &system, entity.id);
+            }
     }
 }
 

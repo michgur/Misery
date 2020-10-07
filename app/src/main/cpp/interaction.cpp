@@ -47,13 +47,17 @@ void InteractionWorld::interact(JNIEnv* env, float delta, Interactable& active, 
                 Interaction& interaction = interactions[activeInteraction];
                 if (interaction.native)
                     interaction.function->native(active.entity, passive.entity, delta);
-                else env->CallVoidMethod(
+                else {
+                    env->CallVoidMethod(
                         interaction.function->jni.jwrapper,
                         interaction.function->jni.invoke,
                         ecs.getEntity(active.entity).jwrapper,
                         ecs.getEntity(passive.entity).jwrapper,
                         delta
                     );
+                    JNI_CATCH_EXCEPTION("java exception occurred when trying to perform interaction %p on entities %i and %i",
+                             &system, active.entity, passive.entity);
+                }
             }
 }
 

@@ -14,5 +14,11 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, "misery-native", __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "misery-native", __VA_ARGS__)
 #define LOGF(...) __android_log_print(ANDROID_LOG_FATAL, "misery-native", __VA_ARGS__)
+#define JNI_CATCH_EXCEPTION(...) if (env->ExceptionCheck()) { \
+    LOGF(__VA_ARGS__); \
+    env->ExceptionDescribe(); \
+    env->ExceptionClear(); \
+    std::abort(); \
+}
 
 #endif //MISERY_LOGGING_H
