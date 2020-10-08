@@ -134,6 +134,7 @@ void InteractionWorld::updateEntities() {
                 for (uint i = 0; i < interactions.size(); i++)
                     findInteractions(interactables[interactable], i);
                 SWAP_REMOVE(toUpdate, update);
+                break;
             }
     }
     toRemove.clear();
