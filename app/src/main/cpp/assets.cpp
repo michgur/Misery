@@ -124,16 +124,13 @@ void openAndAddShader(AAssetManager* assetManager, int program, const char* file
 }
 
 void AssetLoader::load() {
-    while (!tasks.empty()) {
-        LoadTask& task = tasks.front();
+    for (; loaded < assets.size(); loaded++) {
+        LoadTask& task = assets[loaded];
         switch (task.type) {
             case MISERY_ASSET_MESH: loadMesh(task); break;
             case MISERY_ASSET_SHADER: loadShader(task); break;
             case MISERY_ASSET_TEXTURE: loadTexture(task); break;
         }
-        // todo figure out the promise shit
-        loaded.push(std::move(task));
-        tasks.pop();
     }
 }
 

@@ -20,7 +20,7 @@
 #define MISERY_INT_KILL 1
 #define MISERY_INT_SURFACE 2
 
-#define MISERY_RENDER_AABB
+//#define MISERY_RENDER_AABB
 
 /** This class is responsible for rendering all of the entities.
  * It runs on a separate thread which also hosts an OpenGL context.

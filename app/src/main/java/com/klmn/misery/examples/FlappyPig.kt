@@ -21,7 +21,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
     private val pillar: Map<String, Any> by lazy { mapOf(
             "mesh" to Mesh("cube.obj"),
             "material" to Material(
-                    shader = Render.shader,
+                    shader = Shader("vertex.glsl", "fragment.glsl"),
                     diffuse = Texture(activity.assets, "pillar_diffuse.png")
             ),
             "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
@@ -51,14 +51,10 @@ class FlappyPig(activity: Activity) : Game(activity) {
         pillars.clear()
     }
 
-    private object Render {
-        val shader: Shader by lazy { Shader("vertex.glsl", "fragment.glsl") }
-        val cubeMesh: Mesh by lazy { Mesh("cube.obj") }
-    }
     private fun createPlayer() = Entity (
             "mesh" to Mesh("pig.obj"),
             "material" to Material(
-                    shader = Render.shader,
+                    shader = Shader("vertex.glsl", "fragment.glsl"),
                     diffuse = Texture(activity.assets, "pig.png")
             ),
             "transform" to Transform(
@@ -71,6 +67,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
             "controls" to TouchControls(
                     MotionEvent.ACTION_DOWN to {
                         if (speed == 0f) {
+                            removePillars()
                             this["transform", Transform::class]!!.translation = ImmutableVec3f.BACK * 8f
                             this["motion", Motion::class]!!.acceleration = ImmutableVec3f(0f)
                             speed = 3f
@@ -81,9 +78,9 @@ class FlappyPig(activity: Activity) : Game(activity) {
     )
     private fun createSky() {
         for (i in 0..1) Entity(
-            "mesh" to Render.cubeMesh,
+            "mesh" to Mesh("cube.obj"),
             "material" to Material(
-                    shader = Render.shader,
+                    shader = Shader("vertex.glsl", "fragment.glsl"),
                     diffuse = Texture(activity.assets, "skyTexture.jpg")
             ),
             "transform" to Transform(
@@ -145,7 +142,6 @@ class FlappyPig(activity: Activity) : Game(activity) {
         interaction(arrayOf("controls"), arrayOf("pillar")) { e, p, _ ->
             e["motion", Motion::class]!!.acceleration = ImmutableVec3f(0f)
             speed = 0f
-            removePillars()
         }
     }
 }

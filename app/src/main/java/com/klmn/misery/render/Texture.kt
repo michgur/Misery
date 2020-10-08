@@ -16,18 +16,6 @@ class Texture(val pointer: Long)
 {
     constructor(assets: AssetManager, path: String) : this(BitmapFactory.decodeStream(assets.open(path)))
     constructor(bitmap: Bitmap) : this(MiseryJNI.loadTexture(bitmap)) {
-//        bitmap.recycle()
+        bitmap.recycle()
     }
-
-//    private var unit: Int = 0
-//    fun bind(unit: Int = 0) {
-//        this.unit = unit
-//
-//        glActiveTexture(GL_TEXTURE0 + unit)
-//        glBindTexture(GL_TEXTURE_2D, id)
-//    }
-//    fun unbind() {
-//        glActiveTexture(GL_TEXTURE0 + unit)
-//        glBindTexture(GL_TEXTURE_2D, 0)
-//    }
 }
