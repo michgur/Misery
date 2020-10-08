@@ -20,6 +20,8 @@
 #define MISERY_INT_KILL 1
 #define MISERY_INT_SURFACE 2
 
+#define MISERY_RENDER_AABB
+
 /** This class is responsible for rendering all of the entities.
  * It runs on a separate thread which also hosts an OpenGL context.
  * It also is responsible for loading assets that require OpenGL to be loaded */
@@ -41,6 +43,10 @@ class RenderEngine : public ECSListener {
     static void* renderThread(void* ths);
 
     void render(uint entity, float delta);
+#ifdef MISERY_RENDER_AABB
+    uint aabbShader;
+    void renderAABB(uint entity);
+#endif
 
     ECS& ecs;
     std::vector<uint> entities;

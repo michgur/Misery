@@ -66,7 +66,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
                     rotation = Quaternion.rotation(Vec3f.UP, -.6f),
                     scale = Vec3f(.02f)
             ),
-            "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
+            "aabb" to AABB(Vec3f(-50f), Vec3f(50f)),
             "motion" to Motion(),
             "controls" to TouchControls(
                     MotionEvent.ACTION_DOWN to {

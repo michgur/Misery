@@ -77,6 +77,46 @@ void RenderEngine::initOpenGL() {
     glViewport(0, 0, width, height);
 
     projection = Misery::createProjectionMatrix(90, width, height, 0.1f, 1000);
+
+#ifdef MISERY_RENDER_AABB
+    const char* vertex = "#version 300 es\n"
+                         "layout (location = 0) in vec3 position;"
+                          "uniform mat4 mvp;"
+                          "void main() {"
+                          "    gl_Position = mvp * vec4(position, 1.0);"
+                          "}";
+    const char* fragment = "#version 300 es\n"
+                           "precision mediump float;"
+                           "out vec4 fragmentColor;"
+                           "void main() {"
+                           "    fragmentColor = vec4(1.0, 0.0, 0.0, 1.0);"
+                           "}";
+    auto shader = [](uint type, const char* src) {
+        int length = std::strlen(src);
+        uint shader = glCreateShader(type);
+        glShaderSource(shader, 1, &src, &length);
+        glCompileShader(shader);
+        int logLength;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+        char* log = new char[logLength];
+        glGetShaderInfoLog(shader, logLength, nullptr, log);
+        LOGI("%s", log);
+        delete[] log;
+        return shader;
+    };
+    aabbShader = glCreateProgram();
+    glAttachShader(aabbShader, shader(GL_VERTEX_SHADER, vertex));
+    glAttachShader(aabbShader, shader(GL_FRAGMENT_SHADER, fragment));
+    glLinkProgram(aabbShader);
+    glValidateProgram(aabbShader);
+
+    int logLength;
+    glGetProgramiv(aabbShader, GL_INFO_LOG_LENGTH, &logLength);
+    char* log = new char[logLength];
+    glGetProgramInfoLog(aabbShader, logLength, nullptr, log);
+    LOGI("%s", log);
+    delete[] log;
+#endif
 }
 
 inline void clock_gettimediff(clockid_t clockid, timespec* now, timespec* diff) {
@@ -150,6 +190,9 @@ void RenderEngine::renderThread() {
             // draw
             glClear(GL_DEPTH_BUFFER_BIT + GL_COLOR_BUFFER_BIT);
             for (uint entity : entities) render(entity, delta);
+#ifdef MISERY_RENDER_AABB
+            for (uint entity : entities) renderAABB(entity);
+#endif
 
             // swap buffers
             ASSERT(eglSwapBuffers(display, surface), "could not swap buffers! error 0x%04x", eglGetError());
@@ -228,3 +271,39 @@ void RenderEngine::setSurface(AAssetManager* assetManager, ANativeWindow* native
 }
 
 void RenderEngine::releaseSurface() { ANativeWindow_release(window); }
+
+#ifdef MISERY_RENDER_AABB
+#include "colliders.h"
+#include <assimp/matrix4x4.inl>
+#include <assimp/quaternion.inl>
+void RenderEngine::renderAABB(uint entity) {
+    if (!ecs.hasComponent(entity, "_taabb")) return;
+
+    float vertices[] = {
+            1.0f,1.0f,-1.0f, 1.0f,1.0f,1.0f,
+            1.0f,-1.0f,-1.0f, 1.0f,-1.0f,1.0f,
+            -1.0f,1.0f,-1.0f, -1.0f,1.0f,1.0f,
+            -1.0f,-1.0f,-1.0f, -1.0f,-1.0f,1.0f,
+            1.0f,-1.0f,1.0f, 1.0f,1.0f,1.0f,
+            1.0f,-1.0f,-1.0f, 1.0f,1.0f,-1.0f,
+            -1.0f,-1.0f,1.0f, -1.0f,1.0f,1.0f,
+            -1.0f,-1.0f,-1.0f, -1.0f,1.0f,-1.0f,
+            -1.0f,1.0f,1.0f, 1.0f,1.0f,1.0f,
+            -1.0f,1.0f,-1.0f, 1.0f,1.0f,-1.0f,
+            -1.0f,-1.0f,1.0f, 1.0f,-1.0f,1.0f,
+            -1.0f,-1.0f,-1.0f, 1.0f,-1.0f,-1.0f
+    };
+
+    glGetError();
+    AABB* aabb = ecs.getComponent<AABB>(entity, "_taabb");
+    glUseProgram(aabbShader);
+    matrix4f transform = matrix4f(aabb->getExtents(), quaternion(), aabb->getCenter());
+    matrix4f mvp = projection * (camera.toMatrix() * transform);
+    glUniformMatrix4fv(glGetUniformLocation(aabbShader, "mvp"), 1, true, mvp[0]);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, vertices);
+    glEnableVertexAttribArray(0);
+    glLineWidth(5.f);
+    glDrawArrays(GL_LINES, 0, sizeof(vertices) / sizeof(float) / 3);
+}
+#endif
