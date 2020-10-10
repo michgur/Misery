@@ -2,13 +2,10 @@ package com.klmn.misery
 
 import android.app.Activity
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.MotionEvent
 import com.klmn.misery.examples.FlappyPig
 import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.render.MiserySurfaceView
-import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
 /**
@@ -21,6 +18,7 @@ class Misery : Activity()
     private var running = true
     private val update = Runnable {
         var last = System.nanoTime()
+
         while (running) {
             val now = System.nanoTime()
             MiseryJNI.updateECS((now - last).toFloat() / 1_000_000_000)

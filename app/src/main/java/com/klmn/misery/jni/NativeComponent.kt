@@ -3,7 +3,6 @@ package com.klmn.misery.jni
 import com.klmn.misery.math.*
 import kotlin.reflect.KProperty
 
-// todo: try implementing these via bytebuffers, could possibly reduce JNI traffic?
 class NativeFloatDelegate(val pointer: Long, val index: Int) {
     var field = if (pointer == 0L) 0f else null
     operator fun getValue(thisRef: Any?, property: KProperty<*>) =

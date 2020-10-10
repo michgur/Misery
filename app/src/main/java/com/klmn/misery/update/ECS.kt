@@ -6,11 +6,8 @@ import com.klmn.misery.render.Mesh
 import kotlin.reflect.KClass
 import kotlin.reflect.full.safeCast
 
-open class Entity(components: Map<String, Any>) {
+open class Entity {
     val id: Int = MiseryJNI.createEntity(this)
-
-    constructor(vararg components: Pair<String, Any>) : this(mapOf(*components))
-    init { for (component in components.entries) set(component.key, component.value) }
 
     operator fun <T : Any> get(type: String, cls: KClass<T>): T? = cls.safeCast(when (cls) {
         Motion::class -> Motion(MiseryJNI.getComponentPointer(id, type))
@@ -35,6 +32,18 @@ open class Entity(components: Map<String, Any>) {
 
     override fun equals(other: Any?) = other is Entity && other.id == id
     override fun hashCode() = id
+}
+
+fun entity(vararg pairs: Pair<String, Any>) = Entity().also {
+    for ((key, value) in pairs) it[key] = value
+}
+fun entity(map: Map<String, Any>, vararg pairs: Pair<String, Any>) = Entity().also {
+    for ((key, value) in map) it[key] = value
+    for ((key, value) in pairs) it[key] = value
+}
+fun entity(vararg pairs: Pair<String, Any>, map: Map<String, Any>) = Entity().also {
+    for ((key, value) in map) it[key] = value
+    for ((key, value) in pairs) it[key] = value
 }
 
 fun system(vararg types: String, apply: (Entity, Float) -> Unit) =

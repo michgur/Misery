@@ -27,20 +27,16 @@ class FlappyPig(activity: Activity) : Game(activity) {
 
     private val pillars = mutableListOf<Entity>()
     private fun createPillar() {
-        val bottom = Entity(pillar)
-        val top = Entity(pillar)
         val gap = Random.nextInt(-10, 10).toFloat()
         val gapSize = 10f
-        pillars.add(bottom)
-        pillars.add(top)
-        bottom["transform"] = Transform(
+        pillars.add(entity(pillar, "transform" to Transform(
                 translation = Vec3f(-15f, (gap - 15f - gapSize) / 2f, -8f),
                 scale = Vec3f(1f, 15f + gap, 1f)
-        )
-        top["transform"] = Transform(
+        )))
+        pillars.add(entity(pillar, "transform" to Transform(
                 translation = Vec3f(-15f, (gap + 15f + gapSize) / 2f, -8f),
                 scale = Vec3f(1f, 15f - gap, 1f)
-        )
+        )))
     }
     private fun removePillar(pillar: Entity) { if (pillars.remove(pillar)) pillar.destroy() }
     private fun removePillars() {
@@ -48,7 +44,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
         pillars.clear()
     }
 
-    private fun createPlayer() = Entity (
+    private fun createPlayer() = entity (
             "mesh" to Mesh("pig.obj"),
             "material" to Material(
                     shader = Shader("vertex.glsl", "fragment.glsl"),
@@ -74,7 +70,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
             )
     )
     private fun createSky() {
-        for (i in 0..1) Entity(
+        for (i in 0..1) entity(
             "mesh" to Mesh("cube.obj"),
             "material" to Material(
                     shader = Shader("vertex.glsl", "fragment.glsl"),
