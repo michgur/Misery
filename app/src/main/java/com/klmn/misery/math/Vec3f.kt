@@ -1,17 +1,16 @@
 package com.klmn.misery.math
 
+import com.klmn.misery.jni.NativeFloatDelegate
 import kotlin.math.sqrt
 
 /**
  * ಠ^ಠ.
  * Created by Michael on 12/14/2018.
  */
-data class Vec3f(var x: Float, var y: Float, var z: Float)
-{
-    constructor(f: Float = 0f) : this(f, f, f)
-    constructor(f: FloatArray) : this(f[0], f[1], f[2])
-    constructor(v: Vec2f, f: Float) : this(v.x, v.y, f)
-    constructor(f: Float, v: Vec2f) : this(f, v.x, v.y)
+sealed class Vec3f {
+    abstract var x: Float
+    abstract var y: Float
+    abstract var z: Float
 
     operator fun get(index: Int) = when (index) {
         0 -> x
@@ -33,10 +32,6 @@ data class Vec3f(var x: Float, var y: Float, var z: Float)
     operator fun minus(other: Vec3f) = Vec3f(x - other.x, y - other.y, z - other.z)
     operator fun times(other: Vec3f) = Vec3f(x * other.x, y * other.y, z * other.z)
     operator fun div(other: Vec3f) = Vec3f(x / other.x, y / other.y, z / other.z)
-    operator fun plus(other: ImmutableVec3f) = Vec3f(x + other.x, y + other.y, z + other.z)
-    operator fun minus(other: ImmutableVec3f) = Vec3f(x - other.x, y - other.y, z - other.z)
-    operator fun times(other: ImmutableVec3f) = Vec3f(x * other.x, y * other.y, z * other.z)
-    operator fun div(other: ImmutableVec3f) = Vec3f(x / other.x, y / other.y, z / other.z)
 
     operator fun times(f: Float) = Vec3f(x * f, y * f, z * f)
     operator fun div(f: Float) = Vec3f(x / f, y / f, z / f)
@@ -47,17 +42,9 @@ data class Vec3f(var x: Float, var y: Float, var z: Float)
             z * other.x - x * other.z,
             x * other.y - y * other.x
     )
-    infix fun dot(other: ImmutableVec3f) = x * other.x + y * other.y + z * other.z
-    infix fun cross(other: ImmutableVec3f) = Vec3f(
-            y * other.z - z * other.y,
-            z * other.x - x * other.z,
-            x * other.y - y * other.x
-    )
 
     override fun toString() = "($x, $y, $z)"
     fun toFloatArray() = floatArrayOf(x, y, z)
-
-    fun toImmutable() = ImmutableVec3f(x, y, z)
 
     inline val xyz: Vec3f
         get() = Vec3f(x, y, z)
@@ -88,4 +75,17 @@ data class Vec3f(var x: Float, var y: Float, var z: Float)
         val FORWARD = Vec3f(0f, 0f, 1f)
         val BACK    = Vec3f(0f, 0f, -1f)
     }
+}
+
+fun Vec3f(x: Float, y: Float, z: Float) = _Vec3f(x, y, z)
+fun Vec3f(f: Float = 0f) = _Vec3f(f, f, f)
+fun Vec3f(f: FloatArray) = _Vec3f(f[0], f[1], f[2])
+fun Vec3f(v: Vec2f, z: Float) = _Vec3f(v.x, v.y, z)
+fun Vec3f(f: Float, v: Vec2f) = _Vec3f(f, v.x, v.y)
+data class _Vec3f(override var x: Float, override var y: Float, override var z: Float) : Vec3f()
+
+class NativeVec3f(pointer: Long, index: Int) : Vec3f() {
+    override var x: Float by NativeFloatDelegate(pointer, index)
+    override var y: Float by NativeFloatDelegate(pointer, index + 1)
+    override var z: Float by NativeFloatDelegate(pointer, index + 2)
 }

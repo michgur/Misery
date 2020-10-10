@@ -1,19 +1,20 @@
 package com.klmn.misery.math
 
+import com.klmn.misery.jni.NativeFloatDelegate
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
+
 
 /**
  * ಠ^ಠ.
  * Created by Michael on 12/14/2018.
  */
-data class Quaternion(var x: Float, var y: Float, var z: Float, var w: Float)
-{
-    constructor() : this(0f, 0f, 0f, 1f)
-    constructor(vector: Vec3f, scalar: Float) : this(vector.x, vector.y, vector.z, scalar)
-    constructor(vector: ImmutableVec3f, scalar: Float) : this(vector.x, vector.y, vector.z, scalar)
-    constructor(f: FloatArray) : this(f[1], f[2], f[3], f[0])
+sealed class Quaternion {
+    abstract var x: Float
+    abstract var y: Float
+    abstract var z: Float
+    abstract var w: Float
 
     inline var scalar
         get() = w
@@ -28,8 +29,6 @@ data class Quaternion(var x: Float, var y: Float, var z: Float, var w: Float)
 
     operator fun plus(other: Quaternion) = Quaternion(x + other.x, y + other.y, z + other.z, w + other.w)
     operator fun minus(other: Quaternion) = Quaternion(x - other.x, y - other.y, z - other.z, w - other.w)
-    operator fun plus(other: ImmutableQuaternion) = Quaternion(x + other.x, y + other.y, z + other.z, w + other.w)
-    operator fun minus(other: ImmutableQuaternion) = Quaternion(x - other.x, y - other.y, z - other.z, w - other.w)
 
     operator fun plus(f: Float) = Quaternion(x + f, y + f, z + f, w + f)
     operator fun minus(f: Float) = Quaternion(x - f, y - f, z - f, w - f)
@@ -42,15 +41,8 @@ data class Quaternion(var x: Float, var y: Float, var z: Float, var w: Float)
             z * other.w + w * other.z + x * other.y - y * other.x,
             w * other.w - x * other.x - y * other.y - z * other.z
     )
-    operator fun times(other: ImmutableQuaternion) = Quaternion(
-            x * other.w + w * other.x + y * other.z - z * other.y,
-            y * other.w + w * other.y + z * other.x - x * other.z,
-            z * other.w + w * other.z + x * other.y - y * other.x,
-            w * other.w - x * other.x - y * other.y - z * other.z
-    )
 
     infix fun dot(other: Quaternion) = x * other.x + y * other.y + z * other.z + w * other.w
-    infix fun dot(other: ImmutableQuaternion) = x * other.x + y * other.y + z * other.z + w * other.w
     infix fun rotate(vec3f: Vec3f) = (this * Quaternion(vec3f, 0f) * conjugated).vector
 
     inline val up get() = rotate(Vec3f.UP)
@@ -62,8 +54,6 @@ data class Quaternion(var x: Float, var y: Float, var z: Float, var w: Float)
 
     override fun toString() = "[($x, $y, $z), $w]"
     fun toFloatArray() = floatArrayOf(w, x, y, z)
-
-    fun toImmutable() = ImmutableQuaternion(x, y, z, w)
 
     companion object {
         fun rotation(axis: Vec3f, angle: Float) = Quaternion(axis * sin(angle / 2f), cos(angle / 2))
@@ -89,4 +79,17 @@ data class Quaternion(var x: Float, var y: Float, var z: Float, var w: Float)
                     (mat4f[1] - mat4f[4]) / s).normalized
         }
     }
+}
+
+fun Quaternion(x: Float = 0f, y: Float = 0f, z: Float = 0f, w: Float = 1f) = _Quaternion(x, y, z, w)
+fun Quaternion(vector: Vec3f, scalar: Float) = _Quaternion(vector.x, vector.y, vector.z, scalar)
+fun Quaternion(f: FloatArray) = _Quaternion(f[0], f[1], f[2], f[3])
+data class _Quaternion(override var x: Float, override var y: Float,
+                       override var z: Float, override var w: Float) : Quaternion()
+
+class NativeQuaternion(pointer: Long, index: Int) : Quaternion() {
+    override var x by NativeFloatDelegate(pointer, index + 1)
+    override var y by NativeFloatDelegate(pointer, index + 2)
+    override var z by NativeFloatDelegate(pointer, index + 3)
+    override var w by NativeFloatDelegate(pointer, index)
 }

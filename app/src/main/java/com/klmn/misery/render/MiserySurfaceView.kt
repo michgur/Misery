@@ -1,16 +1,12 @@
 package com.klmn.misery.render
 
 import android.content.Context
-import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import com.klmn.misery.jni.MiseryJNI
 
 /* TODO:
-    -separate MiseryView from GLThread, render gl content to a buffer, render android ui on top
-    -perhaps move ALL code except for JNI to native
-    -figure out ui & input management, should be separate from the ecs and as close as possible to
-    regular android app ui
+    -figure out input management, preferably where functions are not stored as a component but as a system
     -native code- urgent organization, try avoiding global variables (have create and set methods
     to avoid increased JNI traffic)
     -debug mesh loading code- some serious bugginess there

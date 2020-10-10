@@ -1,42 +1,46 @@
 package com.klmn.misery.jni
 
-import com.klmn.misery.math.ImmutableQuaternion
-import com.klmn.misery.math.ImmutableVec3f
+import com.klmn.misery.math.*
 import kotlin.reflect.KProperty
 
 // todo: try implementing these via bytebuffers, could possibly reduce JNI traffic?
-class NativeFloatDelegate(val offset: Int) {
-    var value = 0f
-    operator fun getValue(thisRef: NativeComponent, property: KProperty<*>) =
-            if (thisRef.native) MiseryJNI.getFloat(thisRef.pointer, offset) else value
-    operator fun setValue(thisRef: NativeComponent, property: KProperty<*>, value: Float) {
-        if (thisRef.native) MiseryJNI.setFloat(thisRef.pointer, value, offset)
-        else this.value = value
+class NativeFloatDelegate(val pointer: Long, val index: Int) {
+    var field = if (pointer == 0L) 0f else null
+    operator fun getValue(thisRef: Any?, property: KProperty<*>) =
+            if (pointer == 0L) field!! else MiseryJNI.getFloat(pointer, index)
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Float) {
+        if (pointer == 0L) field = value
+        else MiseryJNI.setFloat(pointer, value, index)
+    }
+}
+class NativeVec2fDelegate(val pointer: Long, val index: Int) {
+    var field: Vec2f? = if (pointer == 0L) Vec2f(0f) else null
+    operator fun getValue(thisRef: Any?, property: KProperty<*>) =
+            if (pointer == 0L) field!! else NativeVec2f(pointer, index)
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Vec2f) {
+        if (pointer == 0L) field = value
+        else MiseryJNI.setFloats(pointer, value.toFloatArray(), index)
+    }
+}
+class NativeVec3fDelegate(val pointer: Long, val index: Int) {
+    var field: Vec3f? = if (pointer == 0L) Vec3f(0f) else null
+    operator fun getValue(thisRef: Any?, property: KProperty<*>) =
+            if (pointer == 0L) field!! else NativeVec3f(pointer, index)
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Vec3f) {
+        if (pointer == 0L) field = value
+        else MiseryJNI.setFloats(pointer, value.toFloatArray(), index)
+    }
+}
+class NativeQuaternionDelegate(val pointer: Long, val index: Int) {
+    var field: Quaternion? = if (pointer == 0L) Quaternion() else null
+    operator fun getValue(thisRef: Any?, property: KProperty<*>) =
+        if (pointer == 0L) field!! else NativeQuaternion(pointer, index)
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Quaternion) {
+        if (pointer == 0L) field = value
+        else MiseryJNI.setFloats(pointer, value.toFloatArray(), index)
     }
 }
 
-class NativeVec3fDelegate(val offset: Int) {
-    var value = ImmutableVec3f()
-    operator fun getValue(thisRef: NativeComponent, property: KProperty<*>) =
-        if (thisRef.native) ImmutableVec3f(MiseryJNI.getFloats(thisRef.pointer, 3, offset)) else value
-    operator fun setValue(thisRef: NativeComponent, property: KProperty<*>, value: ImmutableVec3f) {
-        if (thisRef.native) MiseryJNI.setFloats(thisRef.pointer, value.toFloatArray(), offset)
-        else this.value = value
-    }
-}
-
-class NativeQuaternionDelegate(val offset: Int) {
-    var value = ImmutableQuaternion()
-    operator fun getValue(thisRef: NativeComponent, property: KProperty<*>) =
-        if (thisRef.native) ImmutableQuaternion(MiseryJNI.getFloats(thisRef.pointer, 4, offset)) else value
-    operator fun setValue(thisRef: NativeComponent, property: KProperty<*>, value: ImmutableQuaternion) {
-        if (thisRef.native) MiseryJNI.setFloats(thisRef.pointer, value.toFloatArray(), offset)
-        else this.value = value
-    }
-}
-
-open class NativeComponent(var pointer: Long) {
-    var native = true
-
-    constructor() : this(0) { native = false }
+open class NativeComponent(var pointer: Long = 0) {
+    inline val native get() = pointer != 0L
 }

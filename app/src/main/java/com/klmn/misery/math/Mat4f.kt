@@ -60,11 +60,6 @@ class Mat4f
             m[M10] * vec3f.x + m[M11] * vec3f.y + m[M12] * vec3f.z + m[M13],
             m[M20] * vec3f.x + m[M21] * vec3f.y + m[M22] * vec3f.z + m[M23]
     )
-    operator fun times(vec3f: ImmutableVec3f) = Vec3f(
-            m[M00] * vec3f.x + m[M01] * vec3f.y + m[M02] * vec3f.z + m[M03],
-            m[M10] * vec3f.x + m[M11] * vec3f.y + m[M12] * vec3f.z + m[M13],
-            m[M20] * vec3f.x + m[M21] * vec3f.y + m[M22] * vec3f.z + m[M23]
-    )
 
     fun copy() = Mat4f(m.clone())
     override operator fun equals(other: Any?) = other is Mat4f && m.contentEquals(other.m)

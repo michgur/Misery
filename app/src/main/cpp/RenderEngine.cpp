@@ -236,7 +236,8 @@ void RenderEngine::render(uint entity, float) {
     int diffuse = glGetUniformLocation(shader, "diffuse");
 
     matrix4f m = ecs.getComponent<Transform>(entity, "transform")->toMatrix();
-    m = projection * (camera.toMatrix() * m);
+    if (camera != nullptr) m = camera->toMatrix() * m;
+    m = projection * m;
     glUniformMatrix4fv(mvp, 1, true, m[0]);
     glActiveTexture(GL_TEXTURE0);
     uint texture = *(*ecs.getComponent<AssetID*>(material, "diffuse"))->get();
@@ -298,7 +299,8 @@ void RenderEngine::renderAABB(uint entity) {
     AABB* aabb = ecs.getComponent<AABB>(entity, "_taabb");
     glUseProgram(aabbShader);
     matrix4f transform = matrix4f(aabb->getExtents(), quaternion(), aabb->getCenter());
-    matrix4f mvp = projection * (camera.toMatrix() * transform);
+    if (camera != nullptr) transform = camera->toMatrix() * transform;
+    matrix4f mvp = projection * transform;
     glUniformMatrix4fv(glGetUniformLocation(aabbShader, "mvp"), 1, true, mvp[0]);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, vertices);

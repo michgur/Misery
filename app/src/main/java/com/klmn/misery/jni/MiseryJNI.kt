@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.view.Surface
 import android.view.SurfaceHolder
 import com.klmn.misery.update.Entity
+import java.nio.ByteBuffer
 
 object MiseryJNI
 {
@@ -43,6 +44,7 @@ object MiseryJNI
     external fun setFloats(pointer: Long, f: FloatArray, offset: Int)
 
     external fun getCameraTransform(): Long
+    external fun setCameraTransform(camera: Long)
 
     external fun startRenderThread()
     external fun killRenderThread()

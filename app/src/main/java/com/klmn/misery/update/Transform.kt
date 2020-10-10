@@ -9,18 +9,18 @@ import com.klmn.misery.math.*
 class Transform : NativeComponent {
     constructor(pointer: Long) : super(pointer)
     constructor(translation: Vec3f = Vec3f(), rotation: Quaternion = Quaternion(), scale: Vec3f = Vec3f(1f)) {
-        this.translation = translation.toImmutable()
-        this.rotation = rotation.toImmutable()
-        this.scale = scale.toImmutable()
+        this.translation = translation
+        this.rotation = rotation
+        this.scale = scale
     }
 
-    var translation: ImmutableVec3f by NativeVec3fDelegate(0)
-    var rotation: ImmutableQuaternion by NativeQuaternionDelegate(3)
-    var scale: ImmutableVec3f by NativeVec3fDelegate(7)
+    var translation by NativeVec3fDelegate(pointer, 0)
+    var rotation by NativeQuaternionDelegate(pointer, 3)
+    var scale by NativeVec3fDelegate(pointer, 7)
 
     fun toFloatArray() =
-        if (native) MiseryJNI.getFloats(pointer, 10, 0)
-        else floatArrayOf(*translation.toFloatArray(), *rotation.toFloatArray(), *scale.toFloatArray())
+            if (native) MiseryJNI.getFloats(pointer, 10, 0)
+            else floatArrayOf(*translation.toFloatArray(), *rotation.toFloatArray(), *scale.toFloatArray())
 
     var matrix: Mat4f
         get(): Mat4f {
@@ -57,14 +57,14 @@ class Transform : NativeComponent {
             var c0 = Vec3f(matrix[0], matrix[4], matrix[8])
             var c1 = Vec3f(matrix[1], matrix[5], matrix[9])
             var c2 = Vec3f(matrix[2], matrix[6], matrix[10])
-            translation = Vec3f(matrix[3], matrix[7], matrix[11]).toImmutable()
-            scale = Vec3f(c0.length, c1.length, c2.length).toImmutable()
+            translation = Vec3f(matrix[3], matrix[7], matrix[11])
+            scale = Vec3f(c0.length, c1.length, c2.length)
             c0 /= scale.x; c1 /= scale.y; c2 /= scale.z
             val r = Mat4f()
             r[0] = c0.x; r[1] = c1.x; r[2] = c2.x
             r[4] = c0.y; r[5] = c1.y; r[6] = c2.y
             r[8] = c0.z; r[9] = c1.z; r[10] = c2.z
-            rotation = ImmutableQuaternion.fromMatrix(r)
+            rotation = Quaternion.fromMatrix(r)
         }
 
     override fun equals(other: Any?): Boolean {
@@ -72,7 +72,7 @@ class Transform : NativeComponent {
         if (javaClass != other?.javaClass) return false
 
         other as Transform
-        return if (native) pointer == other.pointer
+        return if (pointer != 0L) pointer == other.pointer
         else translation == other.translation && rotation == other.rotation && scale == other.scale
     }
 
@@ -90,10 +90,24 @@ class Transform : NativeComponent {
     }
 
     fun copy(translation: Vec3f = this.translation.xyz,
-             rotation: Quaternion = this.rotation.toMutable(),
+             rotation: Quaternion = this.rotation,
              scale: Vec3f = this.scale.xyz) = Transform(translation, rotation, scale)
 
     operator fun component1() = translation
     operator fun component2() = rotation
     operator fun component3() = scale
 }
+
+//class Camera : Transform() {
+//    override var translation: ImmutableVec3f
+//        get() = super.translation * -1f
+//        set(value) { super.translation = value * -1f }
+//
+//    override var rotation: ImmutableQuaternion
+//        get() = super.rotation.conjugated
+//        set(value) { super.rotation = value.conjugated }
+//
+//    override var scale: ImmutableVec3f
+//        get() = ImmutableVec3f(1f) / super.scale
+//        set(value) { super.scale = ImmutableVec3f(1f) / value }
+//}

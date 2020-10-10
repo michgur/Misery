@@ -217,4 +217,8 @@ Java_com_klmn_misery_jni_MiseryJNI_killRenderThread(JNIEnv *env, jobject thiz) {
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_releaseSurface(JNIEnv *env, jobject thiz) {
     Misery::renderContext.releaseSurface();
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_setCameraTransform(JNIEnv *env, jobject thiz, jlong camera) {
+    Misery::renderContext.camera = (Transform*) camera;
 }

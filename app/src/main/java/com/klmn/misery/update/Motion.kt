@@ -3,7 +3,6 @@ package com.klmn.misery.update
 import com.klmn.misery.jni.MiseryJNI
 import com.klmn.misery.jni.NativeComponent
 import com.klmn.misery.jni.NativeVec3fDelegate
-import com.klmn.misery.math.ImmutableVec3f
 import com.klmn.misery.math.Vec3f
 import kotlin.math.pow
 
@@ -14,12 +13,12 @@ import kotlin.math.pow
 class Motion : NativeComponent {
     constructor(pointer: Long) :super(pointer)
     constructor(velocity: Vec3f = Vec3f(), acceleration: Vec3f = Vec3f()) {
-        this.velocity = velocity.toImmutable()
-        this.acceleration = acceleration.toImmutable()
+        this.velocity = velocity
+        this.acceleration = acceleration
     }
 
-    var velocity: ImmutableVec3f by NativeVec3fDelegate(3)
-    var acceleration: ImmutableVec3f by NativeVec3fDelegate(0)
+    var velocity: Vec3f by NativeVec3fDelegate(pointer, 3)
+    var acceleration: Vec3f by NativeVec3fDelegate(pointer, 0)
 
     fun toFloatArray() =
             if (native) MiseryJNI.getFloats(pointer, 6, 0)

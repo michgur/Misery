@@ -3,8 +3,6 @@ package com.klmn.misery.examples
 import android.app.Activity
 import android.view.MotionEvent
 import com.klmn.misery.Game
-import com.klmn.misery.math.ImmutableQuaternion
-import com.klmn.misery.math.ImmutableVec3f
 import com.klmn.misery.math.Quaternion
 import com.klmn.misery.math.Vec3f
 import com.klmn.misery.render.Material
@@ -12,7 +10,6 @@ import com.klmn.misery.render.Mesh
 import com.klmn.misery.render.Shader
 import com.klmn.misery.render.Texture
 import com.klmn.misery.update.*
-import kotlin.math.PI
 import kotlin.random.Random
 
 class FlappyPig(activity: Activity) : Game(activity) {
@@ -68,11 +65,11 @@ class FlappyPig(activity: Activity) : Game(activity) {
                     MotionEvent.ACTION_DOWN to {
                         if (speed == 0f) {
                             removePillars()
-                            this["transform", Transform::class]!!.translation = ImmutableVec3f.BACK * 8f
-                            this["motion", Motion::class]!!.acceleration = ImmutableVec3f(0f)
+                            this["transform", Transform::class]!!.translation = Vec3f.BACK * 8f
+                            this["motion", Motion::class]!!.acceleration = Vec3f(0f)
                             speed = 3f
                         }
-                        else this["motion", Motion::class]!!.acceleration = ImmutableVec3f.UP * 20f
+                        else this["motion", Motion::class]!!.acceleration = Vec3f.UP * 20f
                     },
             )
     )
@@ -109,7 +106,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
         system("background") { entity, delta ->
             val transform = entity["transform", Transform::class]!!
             if (transform.translation.x > 40f)
-                transform.translation = ImmutableVec3f(-40f, transform.translation.yz)
+                transform.translation = Vec3f(-40f, transform.translation.yz)
             transform.translation += Vec3f.RIGHT * speed * delta
             if (speed > 0f) {
                 timer += delta
@@ -140,7 +137,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
         }
 
         interaction(arrayOf("controls"), arrayOf("pillar")) { e, p, _ ->
-            e["motion", Motion::class]!!.acceleration = ImmutableVec3f(0f)
+            e["motion", Motion::class]!!.acceleration = Vec3f(0f)
             speed = 0f
         }
     }
