@@ -66,10 +66,10 @@ class FlappyPig(activity: Activity) : Game(activity) {
                         if (speed == 0f) {
                             removePillars()
                             this["transform", Transform::class]!!.translation = Vec3f.BACK * 8f
-                            this["motion", Motion::class]!!.acceleration = Vec3f(0f)
+                            this["motion", Motion::class]!!.velocity = Vec3f(0f)
                             speed = 3f
                         }
-                        else this["motion", Motion::class]!!.acceleration = Vec3f.UP * 20f
+                        else this["motion", Motion::class]!!.velocity = Vec3f.UP * 20f
                     },
             )
     )
@@ -105,8 +105,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
         var nextPillar = 0
         system("background") { entity, delta ->
             val transform = entity["transform", Transform::class]!!
-            if (transform.translation.x > 40f)
-                transform.translation = Vec3f(-40f, transform.translation.yz)
+            if (transform.translation.x > 40f) transform.translation.x = -40f
             transform.translation += Vec3f.RIGHT * speed * delta
             if (speed > 0f) {
                 timer += delta
@@ -129,15 +128,15 @@ class FlappyPig(activity: Activity) : Game(activity) {
             if (speed == 0f) return@system
             val motion = entity["motion", Motion::class]!!
             val transform = entity["transform", Transform::class]!!
-            motion.acceleration += gravity * speed * delta
+            motion.velocity += gravity * speed * delta
             transform.rotation = (transform.rotation * Quaternion.rotation(Vec3f.UP, delta)).normalized
 
-            if (transform.translation.y > 25) motion.acceleration *= -1f // hit ceiling
+            if (transform.translation.y > 25) motion.velocity *= -1f // hit ceiling
             if (transform.translation.y < -15) speed = 0f
         }
 
         interaction(arrayOf("controls"), arrayOf("pillar")) { e, p, _ ->
-            e["motion", Motion::class]!!.acceleration = Vec3f(0f)
+            e["motion", Motion::class]!!.velocity = Vec3f(0f)
             speed = 0f
         }
     }

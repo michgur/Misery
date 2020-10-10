@@ -17,8 +17,8 @@ class Motion : NativeComponent {
         this.acceleration = acceleration
     }
 
-    var velocity: Vec3f by NativeVec3fDelegate(pointer, 3)
-    var acceleration: Vec3f by NativeVec3fDelegate(pointer, 0)
+    var velocity: Vec3f by NativeVec3fDelegate(pointer, 0)
+    var acceleration: Vec3f by NativeVec3fDelegate(pointer, 3)
 
     fun toFloatArray() =
             if (native) MiseryJNI.getFloats(pointer, 6, 0)
