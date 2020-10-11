@@ -262,10 +262,10 @@ void RenderEngine::destroyEGLContext() {
     ANativeWindow_release(window);
 }
 
-void RenderEngine::setSurface(AAssetManager* assetManager, ANativeWindow* nativeWindow) {
+void RenderEngine::setSurface(JNIEnv* env, AAssetManager* assetManager, ANativeWindow* nativeWindow) {
     pthread_mutex_lock(&mutex);
     LOGI("render thread (%lu) setting surface %p", thread, nativeWindow);
-    assetLoader.setAssetManager(assetManager);
+    assetLoader.setAssetManager(env, assetManager);
     window = nativeWindow;
     interrupt = MISERY_INT_SURFACE;
     pthread_mutex_unlock(&mutex);

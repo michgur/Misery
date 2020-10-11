@@ -192,3 +192,72 @@ void AssetLoader::loadTexture(AssetLoader::LoadTask &task) const {
     std::free(task.texture->second);
     delete task.texture;
 }
+
+jobject AssetLoader::openJBitmap(JNIEnv *env, const char *asset) {
+    // open asset
+    AAsset* texture = AAssetManager_open(assetManager, asset, AASSET_MODE_BUFFER);
+    const void* buffer = AAsset_getBuffer(texture);
+    int length = AAsset_getLength(texture);
+    // move data to a java byte array in order to pass it to BitmapFactory
+    jbyteArray byteArray = env->NewByteArray(length);
+    env->SetByteArrayRegion(byteArray, 0, length, (jbyte*) buffer);
+    AAsset_close(texture);
+    // get the BitmapFactory.decodeByteArray() static method
+    if (decodeByteArray == nullptr) {
+        bitmapFactory = (jclass) env->NewGlobalRef(env->FindClass("android/graphics/BitmapFactory"));
+        decodeByteArray = env->GetStaticMethodID(bitmapFactory, "decodeByteArray","([BII)Landroid/graphics/Bitmap;");
+    }
+    jobject bitmap = env->CallStaticObjectMethod(bitmapFactory, decodeByteArray, byteArray, 0, length);
+    JNI_CATCH_EXCEPTION("java exception occurred when trying to load texture asset %s", asset);
+    return bitmap;
+}
+
+void AssetLoader::prepareTextureTask(JNIEnv *env, uint index) {
+    jobject bitmap = openJBitmap(env, assets[index].asset->c_str());
+    // since we need a JNI env in order to get the bitmap info, we copy it here &
+    // store it in the LoadTask, which will later pass it to OpenGL in the EGL thread
+    AndroidBitmapInfo info;
+    AndroidBitmap_getInfo(env, bitmap, &info);
+    int size = sizeof(uint32_t) * info.width * info.height;
+    void *src, *buffer = std::malloc(size);
+    AndroidBitmap_lockPixels(env, bitmap, &src);
+    std::memcpy(buffer, src, size);
+    // release the bitmap (data is copied)
+    AndroidBitmap_unlockPixels(env, bitmap);
+    assets[index].texture = new std::pair<AndroidBitmapInfo, void*> { info, buffer };
+    // only the RGBA_8888 android format is supported by OpenGL
+    ASSERT(assets[index].texture->first.format == ANDROID_BITMAP_FORMAT_RGBA_8888,
+           "unsupported texture format!");
+}
+
+AssetID AssetLoader::addMesh(const char *asset) {
+    // check if this mesh asset was already loaded
+    for (LoadTask& t : assets)
+        if (asset == t.asset[0]) return AssetID(t.id);
+    LOGI("added mesh asset %s to queue", asset);
+    assets.push_back(LoadTask { .asset = new std::string(asset), .type = MISERY_ASSET_MESH });
+    return assets.back().id;
+}
+
+AssetID AssetLoader::addShader(const char *vertex, const char *fragment) {
+    // check if a matching shader was already loaded
+    for (LoadTask& t : assets)
+        if (vertex == t.asset[0] && fragment == t.asset[1]) return AssetID(t.id);
+    LOGI("added shader program assets (vertex: %s, fragment: %s) to queue", vertex, fragment);
+    std::string* shaders = new std::string[] { std::string(vertex), std::string(fragment) };
+    assets.push_back(LoadTask { .asset = shaders , .type = MISERY_ASSET_SHADER });
+    return assets.back().id;
+}
+
+AssetID AssetLoader::addTexture(JNIEnv *env, const char *asset) {
+    assets.push_back(LoadTask { .asset = new std::string(asset) , .type = MISERY_ASSET_TEXTURE });
+    if (assetManager == nullptr) pendingTextures.push_back(assets.size() - 1);
+    else prepareTextureTask(env, assets.size() - 1);
+    return assets.back().id;
+}
+
+void AssetLoader::setAssetManager(JNIEnv *env, AAssetManager *aassetManager) {
+    this->assetManager = aassetManager;
+    for (uint i : pendingTextures) prepareTextureTask(env, i);
+    pendingTextures.clear();
+}

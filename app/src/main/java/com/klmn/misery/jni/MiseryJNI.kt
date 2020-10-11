@@ -13,7 +13,7 @@ object MiseryJNI {
     external fun loadMesh(file: String): Long
     external fun drawMesh(pointer: Long)
     external fun createProgram(vertexFile: String, fragmentFile: String): Long
-    external fun loadTexture(texture: Bitmap): Long
+    external fun loadTexture(file: String): Long
 
     external fun updateECS(delta: Float)
     external fun clearECS()

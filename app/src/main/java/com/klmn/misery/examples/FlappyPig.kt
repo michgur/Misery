@@ -19,7 +19,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
             "mesh" to Mesh("cube.obj"),
             "material" to Material(
                     shader = Shader("vertex.glsl", "fragment.glsl"),
-                    diffuse = Texture(activity.assets, "pillar_diffuse.png")
+                    diffuse = Texture("pillar_diffuse.png")
             ),
             "aabb" to AABB(Vec3f(-.5f), Vec3f(.5f)),
             "pillar" to true
@@ -44,11 +44,13 @@ class FlappyPig(activity: Activity) : Game(activity) {
         pillars.clear()
     }
 
+    data class Poop(var x: Int = 0, var y: Int = 2)
+
     private fun createPlayer() = entity (
             "mesh" to Mesh("pig.obj"),
             "material" to Material(
                     shader = Shader("vertex.glsl", "fragment.glsl"),
-                    diffuse = Texture(activity.assets, "pig.png")
+                    diffuse = Texture("pig.png")
             ),
             "transform" to Transform(
                     translation = Vec3f.BACK * 8f,
@@ -74,7 +76,7 @@ class FlappyPig(activity: Activity) : Game(activity) {
             "mesh" to Mesh("cube.obj"),
             "material" to Material(
                     shader = Shader("vertex.glsl", "fragment.glsl"),
-                    diffuse = Texture(activity.assets, "skyTexture.jpg")
+                    diffuse = Texture("skyTexture.jpg")
             ),
             "transform" to Transform(
                     translation = Vec3f(i * 40f, 0f, -12f),

@@ -78,7 +78,7 @@ public:
     Transform* camera = nullptr;
     AssetLoader assetLoader {};
 
-    void setSurface(AAssetManager* assetManager, ANativeWindow* window);
+    void setSurface(JNIEnv* env, AAssetManager* assetManager, ANativeWindow* window);
     void releaseSurface();
 
     void start();

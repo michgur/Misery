@@ -25,7 +25,7 @@
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_loadMesh(JNIEnv *env, jobject thiz, jstring file) {
     const char* fileString = env->GetStringUTFChars(file, nullptr);
-    auto* id = new AssetID(Misery::renderContext.assetLoader.loadMesh(fileString));
+    auto* id = new AssetID(Misery::renderContext.assetLoader.addMesh(fileString));
     env->ReleaseStringUTFChars(file, fileString);
     return (long) id;
 }
@@ -44,7 +44,8 @@ extern "C" JNIEXPORT jlong JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_createProgram(JNIEnv *env, jobject thiz, jstring vertex_file, jstring fragment_file) {
     const char* vertexFileName = env->GetStringUTFChars(vertex_file, nullptr);
     const char* fragmentFileName = env->GetStringUTFChars(fragment_file, nullptr);
-    auto* id = new AssetID(Misery::renderContext.assetLoader.loadShader(vertexFileName, fragmentFileName));
+    auto* id = new AssetID(
+            Misery::renderContext.assetLoader.addShader(vertexFileName, fragmentFileName));
     env->ReleaseStringUTFChars(vertex_file, vertexFileName);
     env->ReleaseStringUTFChars(fragment_file, fragmentFileName);
     return (long) id;
@@ -193,11 +194,6 @@ Java_com_klmn_misery_jni_MiseryJNI_putMotionComponent(JNIEnv *env, jobject thiz,
 }
 
 extern "C"
-JNIEXPORT jlong JNICALL
-Java_com_klmn_misery_jni_MiseryJNI_loadTexture(JNIEnv *env, jobject thiz, jobject texture) {
-    return (long) new AssetID(Misery::renderContext.assetLoader.loadTexture(env, texture));
-}
-extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_startRenderThread(JNIEnv *env, jobject thiz) {
     Misery::renderContext.start();
@@ -208,7 +204,7 @@ Java_com_klmn_misery_jni_MiseryJNI_setSurface(JNIEnv *env, jobject thiz, jobject
                                               jobject assets) {
     ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
     AAssetManager* assetManager = AAssetManager_fromJava(env, assets);
-    Misery::renderContext.setSurface(assetManager, window);
+    Misery::renderContext.setSurface(env, assetManager, window);
 }extern "C"
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_killRenderThread(JNIEnv *env, jobject thiz) {
@@ -221,4 +217,12 @@ Java_com_klmn_misery_jni_MiseryJNI_releaseSurface(JNIEnv *env, jobject thiz) {
 JNIEXPORT void JNICALL
 Java_com_klmn_misery_jni_MiseryJNI_setCameraTransform(JNIEnv *env, jobject thiz, jlong camera) {
     Misery::renderContext.camera = (Transform*) camera;
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_klmn_misery_jni_MiseryJNI_loadTexture(JNIEnv *env, jobject thiz, jstring file) {
+    const char* fileString = env->GetStringUTFChars(file, nullptr);
+    auto* id = new AssetID(Misery::renderContext.assetLoader.addTexture(env, fileString));
+    env->ReleaseStringUTFChars(file, fileString);
+    return (long) id;
 }

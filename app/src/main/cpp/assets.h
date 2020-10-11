@@ -36,54 +36,30 @@ class AssetLoader {
     std::vector<LoadTask> assets = std::vector<LoadTask>();
     /* the amount of assets that have been loaded */
     uint loaded = 0;
+    /* textures that have been added before assetManager was set */
+    std::vector<uint> pendingTextures;
 
     void loadMesh(LoadTask& task) const;
     void loadShader(LoadTask& task) const;
     void loadTexture(LoadTask& task) const;
+
+    jclass bitmapFactory = nullptr;
+    jmethodID decodeByteArray = nullptr;
+    /* open an asset and use its data to create a java bitmap via BitmapFactory */
+    jobject openJBitmap(JNIEnv* env, const char* asset);
+    /* use JNI to extract the data from the asset, so we'll be able to pass it to OpenGL later */
+    void prepareTextureTask(JNIEnv* env, uint index);
 public:
-    inline void setAssetManager(AAssetManager* aassetManager) { this->assetManager = aassetManager; }
+    void setAssetManager(JNIEnv* env, AAssetManager* aassetManager);
 
     inline bool empty() const { return loaded == assets.size(); }
     void load();
 
-    inline AssetID loadMesh(const char* asset) {
-        // check if this mesh asset was already loaded
-        for (LoadTask& t : assets)
-            if (asset == t.asset[0]) return AssetID(t.id);
-        LOGI("added mesh asset %s to queue", asset);
-        assets.push_back(LoadTask { .asset = new std::string(asset), .type = MISERY_ASSET_MESH });
-        return assets.back().id;
-    }
-    inline AssetID loadShader(const char* vertex, const char* fragment) {
-        // check if a matching shader was already loaded
-        for (LoadTask& t : assets)
-            if (vertex == t.asset[0] && fragment == t.asset[1]) return AssetID(t.id);
-        LOGI("added shader program assets (vertex: %s, fragment: %s) to queue", vertex, fragment);
-        std::string* shaders = new std::string[] { std::string(vertex), std::string(fragment) };
-        assets.push_back(LoadTask { .asset = shaders , .type = MISERY_ASSET_SHADER });
-        return assets.back().id;
-    }
-
+    AssetID addMesh(const char* asset);
+    AssetID addShader(const char* vertex, const char* fragment);
     /** since native image decoding is only available since api level >= 30,
      *  we need to rely on java methods to get a bitmap from the asset */
-    inline AssetID loadTexture(JNIEnv* env, jobject bitmap) {
-        assets.push_back(LoadTask { .type = MISERY_ASSET_TEXTURE });
-        // since we need a JNI env in order to get the bitmap info, we copy it here &
-        // store it in the LoadTask, which will later pass it to OpenGL in the EGL thread
-        AndroidBitmapInfo info;
-        AndroidBitmap_getInfo(env, bitmap, &info);
-        int size = sizeof(uint32_t) * info.width * info.height;
-        void *src, *buffer = std::malloc(size);
-        AndroidBitmap_lockPixels(env, bitmap, &src);
-        std::memcpy(buffer, src, size);
-        // release the bitmap (data is copied)
-        AndroidBitmap_unlockPixels(env, bitmap);
-        assets.back().texture = new std::pair<AndroidBitmapInfo, void*> { info, buffer };
-        // only the RGBA_8888 android format is supported by OpenGL
-        ASSERT(assets.back().texture->first.format == ANDROID_BITMAP_FORMAT_RGBA_8888,
-                "unsupported texture format!");
-        return assets.back().id;
-    }
+    AssetID addTexture(JNIEnv* env, const char* asset);
 };
 
 
